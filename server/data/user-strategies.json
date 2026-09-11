@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "strategies": [
+    {
+      "name": "���յ���",
+      "desc": "MA5 �W�� MA21",
+      "filters": {
+        "logic": "and",
+        "conditions": []
+      },
+      "triggers": {
+        "logic": "and",
+        "conditions": [
+          {
+            "type": "ma_cross_up",
+            "params": {
+              "maShort": 5,
+              "maLong": 21
+            },
+            "label": "MA5 �W�� MA21"
+          }
+        ]
+      },
+      "invalidations": {
+        "logic": "and",
+        "conditions": []
+      },
+      "id": "865e9e0a-598b-40bc-9e42-af2df4c9351e",
+      "createdAt": "2026-09-08T19:00:17.331Z",
+      "updatedAt": "2026-09-08T19:00:17.331Z"
+    },
+    {
+      "name": "MA �W�ﵦ��",
+      "desc": "MA5 �W�� MA21",
+      "filters": {
+        "logic": "and",
+        "conditions": []
+      },
+      "triggers": {
+        "logic": "and",
+        "conditions": [
+          {
+            "type": "ma_cross_up",
+            "params": {
+              "maShort": 5,
+              "maLong": 21
+            },
+            "label": "MA5 �W�� MA21"
+          }
+        ]
+      },
+      "invalidations": {
+        "logic": "and",
+        "conditions": []
+      },
+      "id": "354a6cf0-58fe-4abb-846d-15cd9507abd5",
+      "createdAt": "2026-09-08T19:01:14.996Z",
+      "updatedAt": "2026-09-08T19:01:14.996Z"
+    },
+    {
+      "name": "MA test",
+      "desc": "test",
+      "filters": {
+        "logic": "and",
+        "conditions": []
+      },
+      "triggers": {
+        "logic": "and",
+        "conditions": [
+          {
+            "type": "ma_cross_up",
+            "params": {
+              "maShort": 5,
+              "maLong": 21
+            }
+          }
+        ]
+      },
+      "invalidations": {
+        "logic": "and",
+        "conditions": []
+      },
+      "id": "924227f1-e866-4faf-bc34-ef141dec30e9",
+      "createdAt": "2026-09-08T19:01:25.727Z",
+      "updatedAt": "2026-09-08T19:01:25.727Z"
+    },
+    {
+      "name": "Test MA Cross",
+      "desc": "MA5 crosses MA21",
+      "filters": {
+        "logic": "and",
+        "conditions": []
+      },
+      "triggers": {
+        "logic": "and",
+        "conditions": [
+          {
+            "type": "ma_cross_up",
+            "params": {
+              "maShort": 5,
+              "maLong": 21
+            }
+          }
+        ]
+      },
+      "invalidations": {
+        "logic": "and",
+        "conditions": []
+      },
+      "userId": "testuser3",
+      "id": "4cfda954-8650-4270-9805-59e4b431b06b",
+      "createdAt": "2026-09-08T19:02:53.883Z",
+      "updatedAt": "2026-09-08T19:02:53.883Z"
+    }
+  ]
+}

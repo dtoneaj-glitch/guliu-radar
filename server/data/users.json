@@ -1,0 +1,486 @@
+{
+  "version": 1,
+  "users": [
+    {
+      "id": "86607b48ab9f60f4",
+      "username": "testuser",
+      "passwordHash": "15df94e91aed683a90f287ff6db60dcd5ff89249e04eb4e6c3575bbb3f74a7cfd4733f856ab4d1412ce83c7cd843f3871090b601d242d3b392467da44301e933",
+      "passwordSalt": "636053543272977448c31787b36bd15a",
+      "createdAt": "2026-09-08T17:22:50.236Z",
+      "watchlist": []
+    },
+    {
+      "id": "fbcc98fed5b60c19",
+      "username": "testuser3",
+      "passwordHash": "ae70ea787f32b4ac9976c002816c53b9226a2a9fd7498c80ff02303f40fc0b57408c09409bbf9a97a3318c1711610c31882401532db69b27e517be91188f1a9f",
+      "passwordSalt": "cfe054d12c6912c97efb21084f47e2b0",
+      "createdAt": "2026-09-08T17:28:32.219Z",
+      "watchlist": []
+    },
+    {
+      "id": "2c9300cb4f2801ac",
+      "username": "testfix",
+      "passwordHash": "41f98e74d963b5b8fa80c1d92a0a12d92bef9010d049fa03fcc8034b51a90149b8e331ccbf28765531a4ba6fa33f7bead2cf5d43d8d0cb0650fb564f5f35e677",
+      "passwordSalt": "8633e5fac823b17f946e1540b32307a6",
+      "createdAt": "2026-09-08T17:43:33.202Z",
+      "watchlist": []
+    },
+    {
+      "id": "1c0c63e1ae57eab8",
+      "username": "testjwt",
+      "passwordHash": "74715992ba98bd3054b511d231f76e101ddd676a5bc11028f88bd2c2343431f3048cf3fe07909825fa052473cefe64a8a9c0f3f33f81dee986f5b892e28c7921",
+      "passwordSalt": "c239495b92c3695bdf900d16737c0983",
+      "createdAt": "2026-09-08T17:43:56.902Z",
+      "watchlist": []
+    },
+    {
+      "id": "ae4433982614d7b5",
+      "username": "debugjwt",
+      "passwordHash": "657629426c3761dcfa770f4866bb4f845f72c3f46cc1465ed9af3f42f8c94ed7619dc02783b086cd23c6b4ac1638dbcece71f10cc65affb5c6a55b8c909de709",
+      "passwordSalt": "a2e8f2db334c06fe42684d255bc48f82",
+      "createdAt": "2026-09-08T17:44:22.053Z",
+      "watchlist": []
+    },
+    {
+      "id": "54e9d5c7aaa01f1c",
+      "username": "debug2",
+      "passwordHash": "7b3ea6e36f77a91c5d3fe1d12f91b1aebc9846b9b23db8c59041a7b14991c2a8a2424cba28d4bc5fd25e7d3bfdafb1e535054e2e12b37aa39d45cedf3355aa1c",
+      "passwordSalt": "acf231a15c04a2e892cd8d5d099835ef",
+      "createdAt": "2026-09-08T17:44:35.905Z",
+      "watchlist": []
+    },
+    {
+      "id": "7e75387c08530204",
+      "username": "debug3",
+      "passwordHash": "37163cb373b5902b5c8011ec68da02d564ec066d480a52244cc1d82cb3f30010ff9279bbd9681121f585493c67e72a8947d31c7543185378bf68052cedd264c6",
+      "passwordSalt": "106c0bbc37b51f434bdba8487791956c",
+      "createdAt": "2026-09-08T17:44:58.959Z",
+      "watchlist": []
+    },
+    {
+      "id": "3913a0ea5dd15610",
+      "username": "pytest",
+      "passwordHash": "9d084886722d07bf40f657e682de926de361c4f661636f1124e29c7607f855ccb9b2f08d5bdae419e2dd0866c31008a1f765cd7d79207fa8582097933e674e83",
+      "passwordSalt": "a4c0630c55d07a3b44cf3470adca3c4b",
+      "createdAt": "2026-09-08T17:45:16.386Z",
+      "watchlist": []
+    },
+    {
+      "id": "a7fd47944d635bff",
+      "username": "pytest2",
+      "passwordHash": "b883f864a0529af78cafbe6375e82ec916a00686835ec42867ab7a10522fe70df2fc2821c64c79f7d497884413b554064e7b7efc9d59e65018e473e2a3e46e07",
+      "passwordSalt": "47da70936360b3a0be2b71c61ac0cdcd",
+      "createdAt": "2026-09-08T17:45:16.899Z",
+      "watchlist": []
+    },
+    {
+      "id": "59a49c9182a34cd6",
+      "username": "finaltest",
+      "passwordHash": "d583700d2e92f8b54e38f63321893a2ebac7708e43f9803677e515bdd35478124afe6dd6654dabbb07e9646421f054d3967f0c3914937d4409df08a0fe2d3a9d",
+      "passwordSalt": "1ee6cfa2a21f3309fe4b40654fcdb610",
+      "createdAt": "2026-09-08T17:45:56.264Z",
+      "watchlist": []
+    },
+    {
+      "id": "b5da79078d91cc77",
+      "username": "debugtest",
+      "passwordHash": "bc66fc08b99ff8f89aca7919b8a70f1219225ce7a3a7b847f1e87ace055bde4c18a602277d81c6b290ced35f3aa22eba16f7198fe1c609b046f147b705a847bb",
+      "passwordSalt": "0baac0f95acedb4351aa710e753f5937",
+      "createdAt": "2026-09-08T17:46:30.425Z",
+      "watchlist": []
+    },
+    {
+      "id": "6be08c5aa4386eb8",
+      "username": "newuser99",
+      "passwordHash": "85ca15049f1a97fc45370de285556091a8c784080e12605484d4e8cf30d9cfee4bdd450420573dbcb552223a02d47936d468337e06872f3270e4b293c784a008",
+      "passwordSalt": "52b34e71eaccb71ad56a0531c3919fb4",
+      "createdAt": "2026-09-08T17:47:02.558Z",
+      "watchlist": []
+    },
+    {
+      "id": "8e7bd3084344e037",
+      "username": "newuser88",
+      "passwordHash": "f7f8056871bca4457178a3249d73049d7e5dcd80863e36142eed8eebadf179f60abf00f280ca1ee100c8f94f9e059215921f6a29f6954adf7510d4aa7fd27e8d",
+      "passwordSalt": "fc4508e0dea5000547091b31d1b91caf",
+      "createdAt": "2026-09-08T17:47:02.825Z",
+      "watchlist": []
+    },
+    {
+      "id": "6eb37670c080247c",
+      "username": "logtest",
+      "passwordHash": "ab0884857633ec0feb6d028a8170ad0f2344522c1595771e169b3e78816e193c65901d550ca3f38a6a5d4eb14376056799b758c223e365faa7fe8893327f8cc4",
+      "passwordSalt": "88477c64ae7004cabebc9a90bb2e42ff",
+      "createdAt": "2026-09-08T17:47:33.623Z",
+      "watchlist": []
+    },
+    {
+      "id": "c617ae0ea210c9d7",
+      "username": "payloadtest",
+      "passwordHash": "7b212ccff83842957f0a338a7e7a32a0ccac84c4a0132cbe5afa8064f392c868a77140b73fa76cb3e985dc9eba0dc40f267f64e3a00dc36753df62855d975176",
+      "passwordSalt": "1ab40e5e1df68f494106056b5769404a",
+      "createdAt": "2026-09-08T17:47:45.339Z",
+      "watchlist": []
+    },
+    {
+      "id": "0df5ddf44b08bc30",
+      "username": "nodetest2",
+      "passwordHash": "52d226ed7cf728164924f8ebccaba1fef392e6b97c3820f452c6923cfb5f742a40587efe3326fe1c8ff9b91e7d7a4634bb4f0049d11ba3b10e4ba4db489a8dce",
+      "passwordSalt": "7a4b9fd22e6d2ca8df3d00cf4775f886",
+      "createdAt": "2026-09-08T17:47:46.082Z",
+      "watchlist": []
+    },
+    {
+      "id": "29186a37134e4328",
+      "username": "payloadtest2",
+      "passwordHash": "41525ca62abe5bcc6a00f9401a4c6474dd08ab9a9702a6203ef24404162a55901ef1a2403f54916ae9b1af292e5b712af525b81f57cf6e3c2a6add077bc02397",
+      "passwordSalt": "9c09dabaf2244f2ec8730fe09db196d8",
+      "createdAt": "2026-09-08T17:47:59.250Z",
+      "watchlist": []
+    },
+    {
+      "id": "4f82cfefd0af3db1",
+      "username": "debug5",
+      "passwordHash": "3ad81cec23e9b589f9cf3ebe723f82e800c39e31bc666f9ce052253c03fc9ad234914963fdb44671dc7df90756b3e0fbf3dbba718a79fd6852b1f0de9ec882fd",
+      "passwordSalt": "a2cd7487f7584c09fc59a887d94d3765",
+      "createdAt": "2026-09-08T17:48:38.472Z",
+      "watchlist": []
+    },
+    {
+      "id": "6ce7ca7200d26695",
+      "username": "debuglog",
+      "passwordHash": "616c334239f6799e4ff0cfe363092eb49519ec64cf2cc00073fa528900e2db671f4d1869f06ff34788d6bc6589d1e21f4d85a0c58853bc1b2dbd638088463252",
+      "passwordSalt": "6ab5f5726e0e4acf3e763c9d2b5a99ce",
+      "createdAt": "2026-09-08T17:48:49.136Z",
+      "watchlist": []
+    },
+    {
+      "id": "9ef3fec87aa9fc2e",
+      "username": "apitest",
+      "passwordHash": "8d8d26f39bd03bb736c5dfca2b6cee165af68f7cef24cc16d8d739efa262479cbf67508a11fd17aee0a84403ea98e391b05634ab16bd98b12264826aa18756d3",
+      "passwordSalt": "82ed60eee2809bc2e519c4519a214ef3",
+      "createdAt": "2026-09-08T17:49:15.755Z",
+      "watchlist": []
+    },
+    {
+      "id": "5239e1c61a5fae00",
+      "username": "apitest2",
+      "passwordHash": "a8b8694479d4e8ce0176bcf75649f0fed222685a6eaf6f5ca60b880b691034d927960c2f1176c2b43c0e3d1f0b2610a61c3c7698921181dff05de4a849b22b91",
+      "passwordSalt": "613a875366b027059f0d5497e04d8097",
+      "createdAt": "2026-09-08T17:49:23.040Z",
+      "watchlist": []
+    },
+    {
+      "id": "842c7811c276054f",
+      "username": "directtest",
+      "passwordHash": "c0201774c98e521030c982027c6e217c7bb5e8021d906d1c63fdeeabd828be8a9623d7b93e58b1fd67c3fe5b4614a07501b1ecbf78404b9a87dd9df0a35e426a",
+      "passwordSalt": "6e1a9f6d8b62d261ffd3add54fc0c867",
+      "createdAt": "2026-09-08T17:49:27.848Z",
+      "watchlist": []
+    },
+    {
+      "id": "c08d30f5f0857998",
+      "username": "bytetest",
+      "passwordHash": "49d8b076c051ab27edfa036d12a848ec31b0311022d16a92cc2ef2b6be7b011c0a384aa86429603bb28e50ae6235bddfed4d8ad650acf4f5f65d0e33d71d80dc",
+      "passwordSalt": "b7b5ba67e83b0fc1db568ecff6bc862d",
+      "createdAt": "2026-09-08T17:49:41.575Z",
+      "watchlist": []
+    },
+    {
+      "id": "20b70b6995f1d8e7",
+      "username": "bytetest2",
+      "passwordHash": "f5d3d3002be3063a314153fccf5b7d5201f3bad9f468dcaf19bed85677b9b2f1db44ad2053027a337f3ca8b1928c44fd519f0211d132b0dd45aef4af744cd997",
+      "passwordSalt": "24bbe0e37154d4ab821d04f137e530b3",
+      "createdAt": "2026-09-08T17:49:42.069Z",
+      "watchlist": []
+    },
+    {
+      "id": "0d7e77c1adf8083f",
+      "username": "deepdebug",
+      "passwordHash": "fa2788e13194efba37b4fd034c91c214c5664d5eb4af45a8c737c35333614c84a09cc9708ebd7e01bf7d752449fe7c26fe2236b0f9b4b07408cd9cba6e55ca7f",
+      "passwordSalt": "3cbb2c7cb43897d398c970de96004a20",
+      "createdAt": "2026-09-08T17:51:58.897Z",
+      "watchlist": []
+    },
+    {
+      "id": "c021be20d1d57701",
+      "username": "nodedebug",
+      "passwordHash": "b2ebf130b0c590b21da56099b77171a644d3b6c50c5021e7a36b7cf57b0ccfa3711903cf5a11763119b53956c324e98e7e9911ba6e863756ca449656e17641bd",
+      "passwordSalt": "3d10a187690918403809e1ade4a9dfde",
+      "createdAt": "2026-09-08T17:51:59.266Z",
+      "watchlist": []
+    },
+    {
+      "id": "7ade7ee07e3a6d75",
+      "username": "imittest",
+      "passwordHash": "ec50370cfa9c5c3a31c9396d729c6f5c45d22a7db8730fdd06aa127221eb32bd48c7a653ee23d2bd752992c743c7f0000de64387a06ba73b2fa1956b167a61e9",
+      "passwordSalt": "7dc259276f6b1eb04dff8a2e18b21918",
+      "createdAt": "2026-09-08T17:52:25.690Z",
+      "watchlist": []
+    },
+    {
+      "id": "0ea0c8cd933bfbeb",
+      "username": "testbuff",
+      "passwordHash": "355d837fa6a6c81c0aad52005e928fe83c53e37b2475bc1f39eb98ee02134c34add5d79a613b51ff4e744e02e7f9aa6f8ad8fbfa8ac02e4839227b596a2e17ae",
+      "passwordSalt": "f50c435cbba8f04430b6a32579ae3348",
+      "createdAt": "2026-09-08T17:52:44.213Z",
+      "watchlist": []
+    },
+    {
+      "id": "73e33bd20bf1de3f",
+      "username": "nodetest3",
+      "passwordHash": "b93e59aefe3e4fab4eeff7df207f1b03526e593f1b8ea86a2e7b1dc6f323de67cd9e6a22cde7a9abe1ea8a2a8664d40a85d8b8c1920666e5837120eee6bd0b85",
+      "passwordSalt": "b0837cc5d70e99f2d2df626cb31539df",
+      "createdAt": "2026-09-08T17:52:44.542Z",
+      "watchlist": []
+    },
+    {
+      "id": "c7a93a56e5f522d5",
+      "username": "simtest",
+      "passwordHash": "3b142d18cd7646e908dc7e22f56ba4c1c81920beb8e8408d4ba89d8664026f8f8a60b69c573f6b5ca9348041493c05293ffafc56a72da8a6dfa033e88c11e5cc",
+      "passwordSalt": "75b13685c62e15e8fd25d70d655a368f",
+      "createdAt": "2026-09-08T17:54:29.083Z",
+      "watchlist": []
+    },
+    {
+      "id": "4852e9d2cd2d9570",
+      "username": "restarttest",
+      "passwordHash": "45e30b9ef608382f369588194cb373225af8436587acd0f77bce5d135addf0413df113115ce1d2c08a2c1d371771429feeb849d3aa46dec67c9791ec2970db0c",
+      "passwordSalt": "953be38439232d10cdf7a58297f201a9",
+      "createdAt": "2026-09-08T17:54:51.978Z",
+      "watchlist": []
+    },
+    {
+      "id": "5cd559d342e7e4e2",
+      "username": "finaltest2",
+      "passwordHash": "35d33ae587e9993fd45a75f61be36fb59a9326af6090c7114dc9b1b6b9e8af021e051d9f99b4ff78840e2289c3460646478793e96d9282e55f6fea20c315c437",
+      "passwordSalt": "25693fbfb309a5cb12d146d3113a7b79",
+      "createdAt": "2026-09-08T17:56:14.414Z",
+      "watchlist": []
+    },
+    {
+      "id": "dcbd56273f4942e5",
+      "username": "testseq",
+      "passwordHash": "ecfd0057a1752b3c02ecdc5dbcfde50c69cab4f5032d55d21bd1cb143df7c04e7ee41736997d8b085dc4cdf619ace57d14e22d341b3ac781a7c7b2f8a3ea9554",
+      "passwordSalt": "24080d7f8e47f54cc56db62a61633e9b",
+      "createdAt": "2026-09-08T17:56:33.574Z",
+      "watchlist": []
+    },
+    {
+      "id": "a870b8f28867e1ae",
+      "username": "seqtest",
+      "passwordHash": "2d1cba24b26348855ee7af6d4951c19a98b84ddce15ad18c0524978c6b545f18ff5d3894144cac22604ff8d9118bc9307d15a9332bc85a60beef25dbc5ab7e93",
+      "passwordSalt": "5ecc7033e3e4bce5ad877896ecac3e29",
+      "createdAt": "2026-09-08T17:56:33.974Z",
+      "watchlist": []
+    },
+    {
+      "id": "06e63b6ac2517854",
+      "username": "v2test",
+      "passwordHash": "3c17748f0dcb07bc6a2a9843244a8b1f480d2317447311435126db3fa9054280a2dcdff83adcec93ac0c34bd7eaf5e46696a501e05b79e65020fce6f49ccb770",
+      "passwordSalt": "61f26fc64644e03af1f97964b064507c",
+      "createdAt": "2026-09-08T17:57:35.832Z",
+      "watchlist": []
+    },
+    {
+      "id": "657702f038e6005a",
+      "username": "hdrtest",
+      "passwordHash": "549fb55f8a275780886d2cd110ca5f634447c995a0f206ad42300e0893ccf9f3e2b51208f27a680e6538ccd8702e3b2f14b23bc673ff048fe23e73836ddb4008",
+      "passwordSalt": "09b032bec728479af1f800cc6e4c706f",
+      "createdAt": "2026-09-08T17:57:48.253Z",
+      "watchlist": []
+    },
+    {
+      "id": "31a6c3c75d7ba09a",
+      "username": "debug6",
+      "passwordHash": "34d0221afdf573b84afae01111069eaf6f0c08c577e7fb4fe48e9a592629125d71ae018999ed6cf6d30110cfc2116cceb5394c7878260dee32d8a9c77e1b0720",
+      "passwordSalt": "4f4511eac35433e617985e8b6a771dc7",
+      "createdAt": "2026-09-08T17:58:33.952Z",
+      "watchlist": []
+    },
+    {
+      "id": "2b46c4d3f5d1d403",
+      "username": "debug7",
+      "passwordHash": "271a8355dd3b224914a093ef48e1ee45c5b3c4ab85d68592c420c5ceb2b79d29b6efbcd21263a9652664dc5c23d262a5957c19a0e7eba01f94e470d6837aceea",
+      "passwordSalt": "46d91d6be12a6f253f075d7f50553fbf",
+      "createdAt": "2026-09-08T17:58:57.548Z",
+      "watchlist": []
+    },
+    {
+      "id": "77d02a0f4cce5650",
+      "username": "debug8",
+      "passwordHash": "fe038cfba87fa39e631ccb4e40264308878975472c753af649259bfc13019a83bb504dacde0f5e3a644007a592d58bc01efa535dbc4438c2073d0245881c4bae",
+      "passwordSalt": "e9fe90b474f3f98e29d6665e08b711e9",
+      "createdAt": "2026-09-08T17:59:20.383Z",
+      "watchlist": []
+    },
+    {
+      "id": "cc21eb5703beb001",
+      "username": "debug9",
+      "passwordHash": "a470864741cf19426212733e8b64fed097adb028ba290b9bace1a135d478f7895c2f5eb7a02790685eb59f4a02b4565f704a0274d279eb3a19485190f0bc5e7a",
+      "passwordSalt": "aa2c5c888642d170e84f7dc554cef963",
+      "createdAt": "2026-09-08T17:59:48.653Z",
+      "watchlist": []
+    },
+    {
+      "id": "4f22323309ed4a7d",
+      "username": "debug10",
+      "passwordHash": "89df40c0f83b802df176cf26bf6050b4fa07d7da64aacb90519bdd783ad2062c880156e1746d564f574a08bba0290d11e60da0902b7677c70b4325a1602f457c",
+      "passwordSalt": "0bde86858ff9e19ba414d012edd98c8f",
+      "createdAt": "2026-09-08T18:00:31.261Z",
+      "watchlist": []
+    },
+    {
+      "id": "82d8708f8c59427b",
+      "username": "debug11",
+      "passwordHash": "53af0018582c033bf879b25ecc9fd9342f8823709e0fafb1f07629a0852ae5facc7fbea3a87261ed5df8ca14a801c6f14f54c90bd62c2ecb36b8690c8b2c6ce0",
+      "passwordSalt": "0193500348bb83ce06a9030423ac842b",
+      "createdAt": "2026-09-08T18:06:43.649Z",
+      "watchlist": []
+    },
+    {
+      "id": "535a529fab32c9fa",
+      "username": "timetest",
+      "passwordHash": "801baebec7971cfdd773c6a6c0bbc7dcf85c83eec67e49e5097bc61e3920797e7744bccbc3079870e58355af6ae68923e2034a116d9e4fbcf27086d8d414c8ff",
+      "passwordSalt": "b1a47fa652f16313fadd905735b17683",
+      "createdAt": "2026-09-08T18:06:55.709Z",
+      "watchlist": []
+    },
+    {
+      "id": "4e456edb2475fd97",
+      "username": "debug12",
+      "passwordHash": "90f1233459caffc9e340f2121f59f1d734ccb44eb041bfe4cb737dc5466c1e9f8f7a35db1f170bf9e08c97d57607c6073cfca0e10f50ed4ce9fa1ae713624ca9",
+      "passwordSalt": "ac2ac731eaf28e3225423d40932ce251",
+      "createdAt": "2026-09-08T18:07:42.692Z",
+      "watchlist": []
+    },
+    {
+      "id": "5ae95fa4e5823a05",
+      "username": "lencheck",
+      "passwordHash": "cdfa3219925d0a1456818f75bf1c459d54fc5a002cd21fdbf269a74176e93b07163011780a93ffe4c13cd319fb23013573b73e35d980a5a8a2fbc7a3068cac5f",
+      "passwordSalt": "f8389c8a3c41d9500f240c3a03112066",
+      "createdAt": "2026-09-08T18:07:54.794Z",
+      "watchlist": []
+    },
+    {
+      "id": "fe06b87387366acd",
+      "username": "finalcheck",
+      "passwordHash": "729d512489608efdfcf69899d8481ced04eb74b85df10c2ff23825252ae9267d4a2cb4dbc586428075bf3708e687233eaaa2191aeeae204f2440e4cb2d6cda60",
+      "passwordSalt": "44a97b5d432db706ed11a822b351fedb",
+      "createdAt": "2026-09-08T18:07:55.613Z",
+      "watchlist": []
+    },
+    {
+      "id": "8d144883915a0ee5",
+      "username": "freshbuild",
+      "passwordHash": "a21bd698603bbb4b9ab25184ecb498015d2965b9a170a91db2fc8e1f84ed4daf69eda278863e8f54d0f0f4c09817b4b1d59e20ae52fa40f16d8f6c66f8d05ee8",
+      "passwordSalt": "84b639cfd39f4ec65a2785f39e46025b",
+      "createdAt": "2026-09-08T18:08:42.284Z",
+      "watchlist": []
+    },
+    {
+      "id": "ab6e3b61ba0f003c",
+      "username": "member1",
+      "passwordHash": "20dfe6dbc3421d1c640c613f98eb64de5ea79c2d695692c0feb152f85c5ec22f1485fcb0213918387fcbc3fbac5a3ee7cbcafa9063df63ee449f837dfe3534bb",
+      "passwordSalt": "491f10124e4386fb03019be9e3afc5f0",
+      "createdAt": "2026-09-08T18:09:26.046Z",
+      "watchlist": [
+        {
+          "symbol": "2330",
+          "groups": [
+            "\ufffdD\ufffdy"
+          ]
+        },
+        {
+          "symbol": "2454",
+          "groups": [
+            "\ufffdW\ufffd\ufffd"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "99d23324ac9202c6",
+      "username": "testline",
+      "passwordHash": "b211dd16cb9e311c17c5fa2a7f3cd2f076a55448cb72cc4ccecefc8326724d86174128985e387260e7a9131f021c684a3ebb6692b0cfb37490b401d6a335f914",
+      "passwordSalt": "9c0ab6ca05e4794df3aa7aa2a10fe3cb",
+      "createdAt": "2026-09-08T18:22:27.781Z",
+      "watchlist": []
+    },
+    {
+      "id": "5ec09807f35e5f8a",
+      "username": "vtest",
+      "passwordHash": "bbaa067dac19903bf225b38ded81d5dccab55c4e519b892d8a386f0d9ed53a7cf26263c02ef2f737e9e472c9797383698cca20a02e4328feca2cf69d7a63bbff",
+      "passwordSalt": "2b7272a4682c78657d00193199e67626",
+      "createdAt": "2026-09-08T18:32:22.083Z",
+      "watchlist": [
+        {
+          "symbol": "2330",
+          "groups": [
+            "\ufffdD\ufffdy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2fc7caefb40ec682",
+      "username": "lintest",
+      "passwordHash": "82ea34bb1d2e8f394a6157ff9b5bbe62ea06f1b393755a15eaf2c764da839ab643c9fd6a7313f8a99fec2c62c0299497fcabaccce45131595c18c62282372ecb",
+      "passwordSalt": "008eeee36639a7fbf885a67ce1bedf74",
+      "createdAt": "2026-09-08T18:52:23.907Z",
+      "watchlist": []
+    },
+    {
+      "id": "709f271144b288a6",
+      "username": "lintest2",
+      "passwordHash": "ddce2afc879f203424f6aee167da8b4bab6589219c4f8320a86325285d0ded2ebf8042e4deee9120ce35dc5da60da16b5478d40d540ce86356927c7b24f2fa83",
+      "passwordSalt": "1df3f5864aaa7392766400f2c8ee2aa4",
+      "createdAt": "2026-09-08T18:53:23.002Z",
+      "watchlist": []
+    },
+    {
+      "id": "b3611b95141ce719",
+      "username": "lintest_final_3642",
+      "passwordHash": "9782dc679949397989ad3c2b25df949d1cfaa5df3fc0ad76f81ccdad41ad11652f3c7a55081db976f4d6e48a071e76b5c292b89816c52ded181e6917830d82e2",
+      "passwordSalt": "7bc8732be44f60ac35ccfd83ee6f691e",
+      "createdAt": "2026-09-08T18:54:02.926Z",
+      "watchlist": [
+        {
+          "symbol": "2330",
+          "groups": [
+            "\ufffdD\ufffdy"
+          ]
+        },
+        {
+          "symbol": "2454",
+          "groups": [
+            "\ufffdW\ufffd\ufffd"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3f66a57b8c275c66",
+      "username": "lintest_3693",
+      "passwordHash": "74463a5368cc4c762f46fcf07f0c1918c42c872ad58afc7885a678e03bc6032a0560dab73d2fb2e6f9f47ccd50a2fe497e6a180aecb7bd77c874c7a3c1df089d",
+      "passwordSalt": "6d57fb64732a3e793ab7e1be8ae7408f",
+      "createdAt": "2026-09-08T18:54:53.248Z",
+      "watchlist": []
+    },
+    {
+      "id": "9d77aa9228e24aea",
+      "username": "ctxtest",
+      "passwordHash": "2eb5916bbecab40a6670746f21177a102dc014d57c95e2ed4f546698c4b6bba9a078cd279a4962e003a7b7837c33a0134f59f8ab3401a648f49c3f1c0c8b2df1",
+      "passwordSalt": "47d8c0c8151a59eea61a284afaf50a50",
+      "createdAt": "2026-09-08T18:55:09.645Z",
+      "watchlist": []
+    },
+    {
+      "id": "106f7adc8ea98c72",
+      "username": "notiftest",
+      "passwordHash": "b15ecb5839d25d97e939d2744076b8eed6ef09657bbb6390e66c7e0bce8ce5e08fcaf2a59fd03da7018392f08bc31d57308106323106801fa3dad52d0e5a435b",
+      "passwordSalt": "2f2e969b00a8f7409f03c09767e03731",
+      "createdAt": "2026-09-08T19:24:33.269Z",
+      "watchlist": []
+    }
+  ]
+}

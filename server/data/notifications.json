@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "settings": {
+    "106f7adc8ea98c72": {
+      "enabled": true,
+      "strategies": [
+        "pa_default",
+        "breakout-pullback"
+      ],
+      "lineLinked": false
+    }
+  },
+  "notified": []
+}

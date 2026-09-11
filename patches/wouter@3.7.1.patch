@@ -1,0 +1,35 @@
+diff --git a/esm/index.js b/esm/index.js
+index c83bc63a2c10431fb62e25b7d490656a3796f301..bcae513cc4dc1160b8d9bacda62b5b 100644
+--- a/esm/index.js
++++ b/esm/index.js
+@@ -338,6 +338,23 @@ const Switch = ({ children, location }) => {
+   const router = useRouter();
+   const [originalLocation] = useLocationFromRouter(router);
+
++  // Normalize paths like "/**" to "/" so Switch matches the root route.
++  // Some IDE preview browsers inject "**" into the URL, causing a false 404.
++  const _raw = location || originalLocation;
++  const normalizedLocation = _raw === "/**" ? "/"
++    : _raw.startsWith("/**/") ? "/" + _raw.slice(4)
++    : _raw;
++
++  // Collect all route paths to window object
++  if (typeof window !== 'undefined') {
++    if (!window.__WOUTER_ROUTES__) {
++      window.__WOUTER_ROUTES__ = [];
++    }
++
++    const allChildren = flattenChildren(children);
++    allChildren.forEach((element) => {
++      if (isValidElement(element) && element.props.path) {
++        const path = element.props.path;
++        if (!window.__WOUTER_ROUTES__.includes(path)) {
++          window.__WOUTER_ROUTES__.push(path);
++        }
++      }
++    });
++  }
++
+   for (const element of flattenChildren(children)) {
+     let match = 0;
+ 
