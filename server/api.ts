@@ -404,7 +404,32 @@ export function createApi(): express.Router {
     "/chipcard",
     wrap(async (req, res) => {
       const date = req.query.date as string | undefined;
-      res.json(await fetchChipCard(date ?? null));
+      const chipData = await fetchChipCard(date ?? null);
+      // 每次抓到資料就存一筆快照（upsert，同一天重複存不會壞事）——
+      // 這是「本週彙總」改用自己資料庫的前提，見 chipcard-archive.ts 的說明
+      const { saveChipCardSnapshot } = await import("./data/chipcard-archive");
+      saveChipCardSnapshot(chipData);
+      res.json(chipData);
+    }),
+  );
+
+  // 大盤籌碼本週彙總：查自己資料庫已存檔的資料加總，不依賴 TAIFEX API 的歷史查詢
+  // （它沒有這個功能，見 MEMORY-external-api-verification.md）
+  api.get(
+    "/chipcard/weekly",
+    wrap(async (req, res) => {
+      const weekStart = req.query.weekStart as string | undefined;
+      if (!weekStart) {
+        res.status(400).json({ error: "缺少 weekStart 參數" });
+        return;
+      }
+      const { getChipCardWeeklyAggregate } = await import("./data/chipcard-archive");
+      const result = getChipCardWeeklyAggregate(weekStart);
+      if (!result) {
+        res.status(404).json({ error: "本週尚無存檔資料——這個功能剛上線，要等每天實際造訪過大盤籌碼頁才會累積資料" });
+        return;
+      }
+      res.json(result);
     }),
   );
 
@@ -449,7 +474,8 @@ export function createApi(): express.Router {
     wrap(async (req, res) => {
       const snapshot = await getSnapshot();
       const symbol = req.params.symbol.toUpperCase();
-      const signal = await buildStockSignal(snapshot, symbol);
+      const highlight = typeof req.query.highlight === "string" ? req.query.highlight : null;
+      const signal = await buildStockSignal(snapshot, symbol, highlight);
       if (!signal) res.status(404).json({ error: "查無此代號或資料不足" });
       else res.json(signal);
     }),
@@ -1306,77 +1332,50 @@ async function buildStockSignalsBrief(snapshot: Snapshot, symbols: string[]): Pr
   return results;
 }
 
-function buildStrategyMatches(facts: ReturnType<typeof buildMarketFacts>, ind: IndicatorFacts | null, q: Quote, ma20: number | null): StrategyMatch[] {
-  const strategies: StrategyMatch[] = [];
+/**
+ * 研判頁「戰法匹配度」清單——2026-09-12 改成真的接 server/data/strategies.ts 的九戰法，
+ * 取代原本寫死在這裡、名字跟九戰法對不上的 4 個簡化版邏輯（順勢回調買入／突破確認／
+ * 均線站穩／超跌反彈）。之前掃描頁「選戰法→跳進研判頁自動捲動強調」那個功能，
+ * 就是因為兩邊戰法名字系統不一致才一直沒有真的生效，見 MEMORY-strategy-unification.md。
+ *
+ * 呈現原則（使用者要求）：只給「有參考性」的文字，不是把 evaluateStrategy() 完整的
+ * met/missing 技術細節全部倒出來——note 只取第一個句號前的標題句，完整條件細節
+ * 留在「掃描」頁的候選清單裡才展開（那裡本來就是給「比較」用的情境，這裡是給
+ * 「看懂這一檔」用的情境，資訊密度不同）。
+ */
+function headline(note: string): string {
+  const idx = note.indexOf("。");
+  return idx === -1 ? note : note.slice(0, idx);
+}
 
-  // 1. 順勢回調買入：上升趋势中的回調機會
-  if (facts?.trend === "上升" && facts.support) {
-    const nearSupport = q.close <= facts.support.high * 1.02 && q.close >= facts.support.low * 0.98;
-    const hasPattern = facts.patterns.some((p) => p.name.startsWith("多頭"));
-    const met = [facts.trend === "上升", nearSupport, hasPattern].filter(Boolean).length;
-    strategies.push({
-      name: "順勢回調買入",
-      matchPct: Math.round((met / 3) * 100),
-      status: met >= 2 ? "符合" : met >= 1 ? "等待中" : "不適用",
-      plainText: nearSupport
-        ? "已經回調到支撐區附近，可以留意止跌訊號"
-        : "趨勢向上，等回調到支撐區再考慮",
-    });
-  } else {
-    strategies.push({ name: "順勢回調買入", matchPct: 0, status: "不適用", plainText: "趨勢不是上升，不適合這個戰法" });
-  }
+async function buildStrategyMatches(
+  facts: ReturnType<typeof buildMarketFacts>,
+  ind: IndicatorFacts | null,
+  q: Quote,
+  snapshot: Snapshot,
+  highlightStrategyName: string | null = null,
+): Promise<StrategyMatch[]> {
+  const zones = buildIndustryZones(snapshot);
+  const zoneStatus = zones.find((z) => z.id === q.industry)?.status ?? null;
+  const flowYi = q.netBuyValue != null ? q.netBuyValue / 1e8 : null;
 
-  // 2. 突破確認：站穩壓力區且放量
-  if (facts?.resistance) {
-    const brokeOut = q.close >= facts.resistance.high;
-    const volAboveAvg = (ind?.volumeRatio5 ?? 0) >= 1.2;
-    const met = [brokeOut, volAboveAvg].filter(Boolean).length;
-    strategies.push({
-      name: "突破確認",
-      matchPct: Math.round((met / 2) * 100),
-      status: met === 2 ? "符合" : "等待中",
-      plainText: brokeOut ? "已經突破壓力區，可以留意" : "還沒突破壓力區，先觀察",
-    });
-  } else {
-    strategies.push({ name: "突破確認", matchPct: 0, status: "不適用", plainText: "還沒有明確的壓力區" });
-  }
-
-  // 3. 均線站穩：股價站上月線且月線向上
-  if (ma20 != null) {
-    const aboveMa20 = q.close > ma20;
-    const ma20Rising = ind?.maPrev[20] != null && ma20 > (ind.maPrev[20] as number);
-    const met = [aboveMa20, ma20Rising].filter(Boolean).length;
-    strategies.push({
-      name: "均線站穩",
-      matchPct: Math.round((met / 2) * 100),
-      status: met === 2 ? "符合" : met === 1 ? "等待中" : "不適用",
-      plainText: aboveMa20
-        ? `股價在月線(${ma20.toFixed(0)})上方，趨勢偏多`
-        : `股價在月線(${ma20.toFixed(0)})下方，先觀望`,
-    });
-  } else {
-    strategies.push({ name: "均線站穩", matchPct: 0, status: "不適用", plainText: "資料不足" });
-  }
-
-  // 4. 超跌反彈：下跌趨勢中出現止跌訊號
-  if (facts?.trend === "下降") {
-    const bias5d = ind?.bias[5] ?? 0;
-    const oversold = bias5d < -3;
-    const reversalK = facts.patterns.some((p) => p.name === "多頭Pin Bar" || p.name === "多頭吞沒");
-    const met = [oversold, reversalK].filter(Boolean).length;
-    strategies.push({
-      name: "超跌反彈",
-      matchPct: Math.round((met / 2) * 100),
-      status: met === 2 ? "符合" : "等待中",
-      plainText: oversold
-        ? "跌得有點深，出現止跌訊號可以觀察"
-        : "還在下跌中，不急著接刀",
-    });
-  } else {
-    strategies.push({ name: "超跌反彈", matchPct: 0, status: "不適用", plainText: "趨勢不是下跌，不適合這個戰法" });
-  }
-
-  return strategies;
+  // 只保留「有明確結論」的戰法：觸發（符合）或明確排除（不適用）。
+  // 「等待中」沒有明確結論（不算數，過濾掉）；「資料不足」連判斷都做不了（更沒有結論，也過濾掉）。
+  // 數字用 100%／0% 二元呈現，不用 met/missing 算出來的模糊比例——
+  // 不適用的情況（例如「非下跌趨勢，鯨躍不接刀」）met/missing 陣列的填法不一致，算出來的比例會誤導人，
+  // 不如直接用「符合=100、不適用=0」這種一看就懂的二元數字。
+  //
+  // 例外：使用者從「掃描」頁選了某個戰法點進來（highlightStrategyName），即使那檔股票在
+  // 這個戰法上其實是「等待中」，也破例顯示——使用者是為了看這個戰法才點進來的，
+  // 過濾掉會讓「掃描選戰法→跳研判頁強調」這個功能看起來像壞掉。
+  return STRATEGIES.map((s): StrategyMatch | null => {
+    const r = evaluateStrategy(s.id, { facts, ind, quote: q, zoneStatus, flowYi }, q.symbol);
+    const isHighlightException = highlightStrategyName != null && s.name === highlightStrategyName;
+    if ((r.status === "waiting" || r.status === "insufficient") && !isHighlightException) return null;
+    const matchPct = r.status === "triggered" ? 100 : r.status === "waiting" ? 50 : 0;
+    const status: StrategyMatch["status"] = r.status === "triggered" ? "符合" : r.status === "waiting" ? "等待中" : "不適用";
+    return { name: s.name, matchPct, status, plainText: headline(r.note) };
+  }).filter((m): m is StrategyMatch => m != null);
 }
 
 function buildAdvice(status: StockSignal["status"], facts: ReturnType<typeof buildMarketFacts>, ma20: number | null, close: number): string[] {
@@ -1437,7 +1436,7 @@ function countConsecutiveDays(
   return results;
 }
 
-async function buildStockSignal(snapshot: Snapshot, symbol: string): Promise<StockSignal | null> {
+async function buildStockSignal(snapshot: Snapshot, symbol: string, highlightStrategyName: string | null = null): Promise<StockSignal | null> {
   const q = snapshot.bySymbol.get(symbol);
   if (!q) return null;
 
@@ -1475,8 +1474,10 @@ async function buildStockSignal(snapshot: Snapshot, symbol: string): Promise<Sto
       ma60,
       support: facts?.support ? [facts.support.low, facts.support.high] : null,
       resistance: facts?.resistance ? [facts.resistance.low, facts.resistance.high] : null,
+      invalidation: facts?.invalidation ?? null,
+      recentSwingLow: facts?.swings.lastLow?.price ?? null,
     },
-    strategies: buildStrategyMatches(facts, ind, q, ma20),
+    strategies: await buildStrategyMatches(facts, ind, q, snapshot, highlightStrategyName),
     advice: buildAdvice(st.status, facts, ma20, q.close),
     institutional: {
       foreign: inst ? Math.round((inst.foreign * q.close) / 1e8) : null,

@@ -4,10 +4,10 @@
  * 密集的長條圖對「大白話」的產品定位來說太技術性，換成跟首頁同一套「標籤+徽章+大數字」語言。
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { ChipCardData, OptionsOIData } from "@shared/types";
 import type { ChipDivergenceResult } from "@shared/chip-divergence";
-import { fetchChipCard, fetchOptionsOI, fetchChipDivergence, fetchRetailFutures } from "@/lib/api";
+import { fetchChipCard, fetchOptionsOI, fetchChipDivergence, fetchRetailFutures, fetchChipCardWeekly } from "@/lib/api";
 import { fmtDate } from "@/lib/format";
 import { useAsync } from "@/lib/useAsync";
 import { BadgeCheck, Calendar, ChevronUp, Clock, TrendingDown, TrendingUp } from "lucide-react";
@@ -189,17 +189,36 @@ export default function ChipCard() {
   const today = new Date().toISOString().slice(0, 10);
   const [period, setPeriod] = useState<Period>("daily");
   const [viewMode, setViewMode] = useState<ViewMode>("trader");
-  const [fetchDate, setFetchDate] = useState<string>(today);
 
-  useEffect(() => {
-    setFetchDate(period === "weekly" ? isoWeekStart(today) : today);
-  }, [period]);
-
-  const { data: chipData, error: chipError, reload } = useAsync(() => fetchChipCard(fetchDate), [fetchDate]);
-  const { data: optData } = useAsync(() => fetchOptionsOI(fetchDate), [fetchDate]);
+  // 結論卡/選擇權OI/P&C儀表/散戶留倉一律看「今天」——這些是即時狀態指標，
+  // 「本週累計」對它們沒有意義，只有期貨未平倉淨額適合累加
+  const { data: chipData, error: chipError, reload } = useAsync(() => fetchChipCard(today), []);
+  const { data: optData } = useAsync(() => fetchOptionsOI(today), []);
   const { data: divergence } = useAsync(() => fetchChipDivergence(), []);
 
-  // 期貨契約排行（按契約檢視用；直接列表，不用圖表）
+  // 本週彙總：查自己資料庫存的每日快照加總（不依賴 TAIFEX API 的歷史查詢，它沒有這功能，
+  // 見 chipcard-archive.ts 的說明），只有選「本週」時才會發這個請求
+  const { data: weeklyData, error: weeklyError } = useAsync(
+    () => (period === "weekly" ? fetchChipCardWeekly(isoWeekStart(today)) : Promise.resolve(null)),
+    [period],
+  );
+
+  // 期貨未平倉卡片實際顯示的資料：本週模式顯示「本週買賣超合計」（流量，可加總）+ 最新未平倉部位（存量，僅供參考）
+  const futuresDisplay = useMemo(() => {
+    if (period === "weekly") {
+      if (!weeklyData) return null;
+      return weeklyData.traders.map((t) => ({
+        trader: t.trader,
+        netOI: t.netTradeSum,
+        latestNetOI: t.latestNetOI,
+        bias: (t.netTradeSum > 0 ? "long" : t.netTradeSum < 0 ? "short" : "flat") as "long" | "short" | "flat",
+      }));
+    }
+    if (!chipData) return null;
+    return chipData.traders.map((t) => ({ trader: t.trader, netOI: t.futuresNetOI, latestNetOI: null as number | null, bias: t.futuresBias }));
+  }, [period, weeklyData, chipData]);
+
+  // 期貨契約排行（按契約檢視用；直接列表，不用圖表——只有今日模式才有這個資料）
   const topFutures = useMemo(() => (chipData ? chipData.topFutures.slice(0, 5) : []), [chipData]);
 
   return (
@@ -209,20 +228,29 @@ export default function ChipCard() {
         <div>
           <span className="chip-eyebrow">MARKET CAPITAL</span>
           <h2>大盤籌碼 <small>期貨 · 選擇權未平倉</small></h2>
-          {chipData && <p className="chip-as-of">{fmtDate(chipData.asOf)} · {period === "weekly" ? "本週累計" : "今日盤後"}</p>}
+          {period === "weekly"
+            ? weeklyData && <p className="chip-as-of">{weeklyData.weekStart} 起 · 本週累計（{weeklyData.daysIncluded.length} 個交易日）</p>
+            : chipData && <p className="chip-as-of">{fmtDate(chipData.asOf)} · 今日盤後</p>}
         </div>
         <div className="chip-controls">
           <div className="chip-period-btns" role="group">
             <button className={`chip-period-btn ${period === "daily" ? "active" : ""}`} onClick={() => setPeriod("daily")}>
               <Clock size={12} /><span>今日</span>
             </button>
-            <button className={`chip-period-btn ${period === "weekly" ? "active" : ""}`} onClick={() => setPeriod("weekly")}>
+            <button className={`chip-period-btn ${period === "weekly" ? "active" : ""}`} onClick={() => { setPeriod("weekly"); setViewMode("trader"); }}>
               <Calendar size={12} /><span>本週</span>
             </button>
           </div>
           <div className="chip-view-toggle" role="group">
             <button className={`chip-view-btn ${viewMode === "trader" ? "active" : ""}`} onClick={() => setViewMode("trader")}>按法人</button>
-            <button className={`chip-view-btn ${viewMode === "contract" ? "active" : ""}`} onClick={() => setViewMode("contract")}>按契約</button>
+            <button
+              className={`chip-view-btn ${viewMode === "contract" ? "active" : ""}`}
+              onClick={() => setViewMode("contract")}
+              disabled={period === "weekly"}
+              title={period === "weekly" ? "本週彙總目前只支援按法人檢視" : undefined}
+            >
+              按契約
+            </button>
           </div>
           <button className="chip-refresh-btn" onClick={reload} aria-label="重新整理"><ChevronUp size={14} /></button>
         </div>
@@ -241,19 +269,33 @@ export default function ChipCard() {
       {/* ── 期貨未平倉：簡化統計卡 ── */}
       <div className="chip-section-label">
         <span className="chip-eyebrow">FUTURES OI</span>
-        <h3>三大法人期貨未平倉</h3>
+        <h3>{period === "weekly" ? "三大法人期貨本週買賣超" : "三大法人期貨未平倉"}</h3>
       </div>
       {viewMode === "trader" ? (
-        chipData ? (
+        period === "weekly" && !weeklyData ? (
+          <div className="chip-empty">
+            <p>{weeklyError ?? "本週尚無存檔資料——這個功能是新的，需要每天實際造訪過這頁才會累積資料，明後天再回來看"}</p>
+          </div>
+        ) : futuresDisplay ? (
           <div className="chip-stat-grid">
-            {chipData.traders.map((t) => (
+            {futuresDisplay.map((t) => (
               <div key={t.trader} className="chip-stat-card">
                 <div className="chip-stat-head">
                   <small>{t.trader}</small>
-                  <span className={`chip-stat-badge ${t.futuresBias}`}>{biasLabel(t.futuresBias)}</span>
+                  <span className={`chip-stat-badge ${t.bias}`}>{biasLabel(t.bias)}</span>
                 </div>
-                <div className={`chip-stat-num ${t.futuresBias}`}>{t.futuresNetOI >= 0 ? "+" : ""}{t.futuresNetOI.toLocaleString()} 口</div>
-                <div className="chip-stat-sub">今日買賣超 {t.futuresNetTrade >= 0 ? "+" : ""}{t.futuresNetTrade.toLocaleString()} 口</div>
+                <div className={`chip-stat-num ${t.bias}`}>{t.netOI >= 0 ? "+" : ""}{t.netOI.toLocaleString()} 口</div>
+                {period === "weekly" && t.latestNetOI != null && (
+                  <div className="chip-stat-sub">目前未平倉 {t.latestNetOI >= 0 ? "+" : ""}{t.latestNetOI.toLocaleString()} 口</div>
+                )}
+                {period === "daily" && chipData && (
+                  <div className="chip-stat-sub">
+                    今日買賣超 {(() => {
+                      const raw = chipData.traders.find((x) => x.trader === t.trader)?.futuresNetTrade ?? 0;
+                      return `${raw >= 0 ? "+" : ""}${raw.toLocaleString()} 口`;
+                    })()}
+                  </div>
+                )}
               </div>
             ))}
           </div>

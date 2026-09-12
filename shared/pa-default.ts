@@ -85,16 +85,19 @@ export function evaluatePaDefault(input: { symbol: string; name: string; bundle:
   patterns.forEach((pattern) => (pattern.status === "已確認" ? confirmed : inferred).push(`${pattern.name}（${pattern.status}）`));
   if (!patterns.length) waiting.push("等待價格行為形態確認");
 
-  const nearSupport = support && daily.price.close != null && daily.price.close >= support.low - (support.high - support.low) * 0.5 && daily.price.close <= support.high + (support.high - support.low) * 0.75;
+  const nearSupport = support && daily.price.close != null && daily.price.close >= support.low - (support.high - support.low) * 0.5 && daily.price.close <= support.high + (support.high - support.low) * 0.35;
   const bullPattern = patterns.some((pattern) => pattern.name.startsWith("多頭"));
-  const triggered = daily.data.status === "ready" && daily.structure.trend !== "下降" && Boolean(nearSupport && bullPattern && minute.data.status === "ready");
+  // 多時框對齊分數必須淨多方傾斜（>0）才允許觸發——分數已經算出來顯示給使用者看了，
+  // 決策邏輯不該視而不見；資料不足（null）時維持保守，不觸發，跟其餘欄位「不足就不給結論」一致。
+  const alignmentSupportsLong = bundle.alignment.score != null && bundle.alignment.score > 0;
+  const triggered = daily.data.status === "ready" && daily.structure.trend !== "下降" && alignmentSupportsLong && Boolean(nearSupport && bullPattern && minute.data.status === "ready");
   const noTrade = daily.data.status === "ready" && daily.structure.trend === "下降" && !bullPattern;
   sections.push({
     id: "scenarios",
     title: "四、提出交易情境",
     summary: triggered ? "順勢做多條件暫時齊備，仍需核對風險報酬。" : noTrade ? "目前不交易：日線下降且沒有多頭確認。" : "等待確認，不直接追價或預測反轉。",
     items: [
-      triggered ? "順勢做多：支撐區附近＋多頭價格行為＋15 分觸發資料已具備" : "順勢做多：等待支撐區、反轉 K 與 15 分觸發條件",
+      triggered ? "順勢做多：支撐區附近＋多頭價格行為＋多時框對齊偏多＋15 分觸發資料已具備" : `順勢做多：等待支撐區、反轉 K、15 分觸發條件${alignmentSupportsLong ? "" : "，以及多時框對齊分數轉為淨多方（目前未偏多或資料不足）"}`,
       noTrade ? "不交易：結構失效或缺乏反轉證據" : "不交易條件：跌破結構失效位、風險報酬不足或多週期衝突",
       hourly.data.status === "ready" ? "60 分：可進一步檢查回踩與進場區" : "60 分：等待資料確認進場區",
     ],

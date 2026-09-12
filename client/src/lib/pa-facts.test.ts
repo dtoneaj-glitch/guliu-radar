@@ -23,6 +23,17 @@ function uptrend(): Candle[] {
   return candlesFrom(closes);
 }
 
+function downtrend(): Candle[] {
+  // uptrend() 的擺盪 anchors 反過來走，確保真的產生「下降」結構（LH/LL），
+  // 不是單調遞減的假下降——單調遞減沒有高低點擺盪序列，會被判定成「震盪」而非「下降」
+  const anchors = [140, 121, 128, 110, 116, 100];
+  const closes: number[] = [];
+  for (let a = 0; a < anchors.length - 1; a++) {
+    for (let i = 1; i <= 7; i++) closes.push(anchors[a] + ((anchors[a + 1] - anchors[a]) * i) / 7);
+  }
+  return candlesFrom(closes);
+}
+
 describe("PA Facts Layer", () => {
   it("builds a versioned, structured fact result from OHLCV", () => {
     const facts = buildPAFacts(uptrend(), "1d");
@@ -67,6 +78,34 @@ describe("pa_default analysis engine", () => {
     expect(result.evidence.confirmed.length).toBeGreaterThan(0);
     expect(result.disclaimer).toContain("不保證獲利");
   });
+
+  it("只有日線資料時（單一時框），alignment score 反映該時框方向，不是null——用來確認觸發條件不會因score=null誤判", () => {
+    const daily = buildPAFacts(uptrend(), "1d");
+    const bundle = buildMultiTimeframeFacts("2330", { "1d": uptrend() });
+    expect(bundle.alignment.score).not.toBeNull();
+    expect(bundle.alignment.score!).toBeGreaterThan(0);
+    const result = evaluatePaDefault({ symbol: "2330", name: "台積電", bundle, daily });
+    // 分數是正的，不該是「因為分數不足」被擋——沒觸發的話，原因只會是其他條件
+    // （靠近支撐／多頭形態／15分資料）未滿足，不是no-trade
+    expect(result.status).not.toBe("no-trade");
+  });
+
+  it("多時框對齊分數為淨空方（score<0）時不觸發，即使日線本身是上升", () => {
+    // 週線/60分/15分都是真正的下降結構（擺盪出LH/LL），日線是上升——
+    // 加權後（週線佔比最重40%）score應偏空方
+    const bundle = buildMultiTimeframeFacts("2330", {
+      "1w": downtrend(),
+      "1d": uptrend(),
+      "60m": downtrend(),
+      "15m": downtrend(),
+    });
+    expect(bundle.alignment.score).not.toBeNull();
+    expect(bundle.alignment.score!).toBeLessThan(0);
+    const daily = buildPAFacts(uptrend(), "1d");
+    const result = evaluatePaDefault({ symbol: "2330", name: "台積電", bundle, daily });
+    expect(result.status).not.toBe("triggered");
+  });
+
 });
 
 export type { PAFacts };

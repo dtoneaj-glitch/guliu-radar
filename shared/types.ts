@@ -444,6 +444,10 @@ export interface StockSignal {
     ma60: number | null;
     support: [number, number] | null;
     resistance: [number, number] | null;
+    /** 結構失效位（PA事實層 f.invalidation），移動停利的初始基準，見 shared/trailing-stop.ts */
+    invalidation: number | null;
+    /** 最近一個已確認的 HL（f.swings.lastLow?.price），移動停利棘輪往上移動的依據 */
+    recentSwingLow: number | null;
   };
   strategies: StrategyMatch[];
   advice: string[];

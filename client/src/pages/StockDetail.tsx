@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { StockSignal } from "@shared/types";
+import { computeTrailingStop } from "@shared/trailing-stop";
 import { useWatchlist } from "@/lib/watchlist";
 import { fmtPrice, fmtPct, fmtSignedPrice } from "@/lib/format";
 import { fetchStockSignal } from "@/lib/api";
@@ -23,10 +24,10 @@ export default function StockDetail({ symbol, onBack, highlightStrategy }: Stock
 
   useEffect(() => {
     setLoading(true);
-    fetchStockSignal(symbol)
+    fetchStockSignal(symbol, highlightStrategy)
       .then((s) => { setSignal(s); setLoading(false); })
       .catch((e) => { setError(e.message); setLoading(false); });
-  }, [symbol]);
+  }, [symbol, highlightStrategy]);
 
   useEffect(() => {
     if (!loading && highlightStrategy && highlightRef.current) {
@@ -61,7 +62,11 @@ export default function StockDetail({ symbol, onBack, highlightStrategy }: Stock
         戰法匹配度{isHolding && <span style={{ marginLeft: 8, color: "var(--muted-foreground)", fontWeight: 400 }}>（已持有中，找加碼/新進場點才需要看這個）</span>}
       </div>
       <div style={{ border: "1px solid var(--border)", borderRadius: 12, overflow: "hidden", background: "var(--card)" }}>
-        {signal.strategies.map((s) => {
+        {signal.strategies.length === 0 ? (
+          <div style={{ padding: "16px 14px", fontSize: 12.5, color: "var(--muted-foreground)", textAlign: "center" }}>
+            目前 9 個戰法都還沒有明確結論（等待中或資料不足），先看下方建議跟法人動向。
+          </div>
+        ) : signal.strategies.map((s) => {
           const isHighlighted = highlightStrategy != null && s.name === highlightStrategy;
           return (
           <div
@@ -124,9 +129,21 @@ export default function StockDetail({ symbol, onBack, highlightStrategy }: Stock
           </p>
         )}
         <p style={{ fontSize: 12.5, color: "var(--muted-foreground)", margin: 0, lineHeight: 1.7 }}>
-          {signal.pricePosition.support
-            ? `支撐參考 ${fmtPrice(signal.pricePosition.support[0])}–${fmtPrice(signal.pricePosition.support[1])}——跌破這個區間，代表原本撐住股價的買方力道可能不在了，該重新評估是否續抱。`
-            : "目前沒有明確的支撐參考位，結構偏不確定，續抱前建議先看下方戰法匹配度跟法人動向再判斷。"}
+          {costPrice != null ? (
+            (() => {
+              const ts = computeTrailingStop({
+                costPrice,
+                currentClose: signal.close,
+                initialStop: signal.pricePosition.invalidation,
+                recentSwingLow: signal.pricePosition.recentSwingLow,
+              });
+              return ts.narrative;
+            })()
+          ) : signal.pricePosition.support ? (
+            `支撐參考 ${fmtPrice(signal.pricePosition.support[0])}–${fmtPrice(signal.pricePosition.support[1])}——跌破這個區間，代表原本撐住股價的買方力道可能不在了，該重新評估是否續抱。`
+          ) : (
+            "目前沒有明確的支撐參考位，結構偏不確定，續抱前建議先看下方戰法匹配度跟法人動向再判斷。"
+          )}
         </p>
       </div>
     </div>
@@ -364,6 +381,13 @@ function PricePositionViz({ position }: { position: StockSignal["pricePosition"]
           <div style={{ fontSize: 11, color: "var(--muted-foreground)", marginTop: 8, fontFamily: "'DM Mono', monospace" }}>
             月線(20日): {fmtPrice(ma20)}
           </div>
+        )}
+        {(hasSupport || hasResistance) && (
+          <p style={{ fontSize: 12, color: "var(--muted-foreground)", marginTop: 10, lineHeight: 1.7, borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+            {hasSupport && `支撐 ${fmtPrice(support[0])}–${fmtPrice(support[1])}：這裡是買方目前願意接手的價位帶，跌破代表買方力道轉弱，該提高警覺。`}
+            {hasSupport && hasResistance && " "}
+            {hasResistance && `壓力 ${fmtPrice(resistance[0])}–${fmtPrice(resistance[1])}：這裡是賣方目前還在出貨的價位帶，站穩突破代表多方力道增強。`}
+          </p>
         )}
       </div>
     </div>

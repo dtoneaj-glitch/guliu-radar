@@ -136,7 +136,12 @@ function evaluateOne(id: string, ctx: EvalContext): { status: StrategyStatus; me
     if (bull) met.push("回踩後出現多頭反轉 K");
     else missing.push("等待回踩止跌 K（Pin Bar／吞沒）");
     const triggered = brokeOut && pullback && holding && bull;
-    return ev(triggered ? "triggered" : "waiting", met, missing, triggered ? "破浪成型：突破後回踩有撐，核對 R:R 再說" : "破浪等待中");
+    return ev(
+      triggered ? "triggered" : "waiting",
+      met,
+      missing,
+      triggered ? `破浪成型：突破後回踩有撐，核對 R:R 再說。停損：跌破結構失效位 ${f.invalidation?.toFixed(0)}` : "破浪等待中",
+    );
   }
 
   if (id === "institution-tailwind") {
@@ -156,7 +161,14 @@ function evaluateOne(id: string, ctx: EvalContext): { status: StrategyStatus; me
     else if (bullAny) missing.push("反轉 K 尚未收確認");
     else missing.push("等待支撐區的多頭吞沒／Pin Bar");
     const triggered = flowYi >= 1 && (zoneStatus === "聚焦" || zoneStatus === "升溫") && f.support && nearSupport(f, close) && bullConfirmed;
-    return ev(triggered ? "triggered" : "waiting", met, missing, triggered ? "順流成型：法人、板塊、結構三方共振" : "順流等待中");
+    return ev(
+      triggered ? "triggered" : "waiting",
+      met,
+      missing,
+      triggered
+        ? `順流成型：法人、板塊、結構三方共振。停損：跌破支撐區失效位 ${f.invalidation?.toFixed(0) ?? f.support?.low.toFixed(0)}，或法人由買轉賣，兩者任一即出場`
+        : "順流等待中",
+    );
   }
 
   if (id === "trend-follow") {
@@ -177,7 +189,12 @@ function evaluateOne(id: string, ctx: EvalContext): { status: StrategyStatus; me
     if (bull) met.push("回調中出現多頭 K");
     else missing.push("等待回調止跌 K");
     const triggered = hlIntact && pullback && bull;
-    return ev(triggered ? "triggered" : "waiting", met, missing, triggered ? "潮流可乘：回調有撐，順勢條件成立" : "潮流觀察中：等回調與止跌");
+    return ev(
+      triggered ? "triggered" : "waiting",
+      met,
+      missing,
+      triggered ? `潮流可乘：回調有撐，順勢條件成立。停損：跌破最後 HL ${lastLow?.toFixed(0)}，結構失效即出場` : "潮流觀察中：等回調與止跌",
+    );
   }
 
   if (id === "range-fade") {
@@ -198,7 +215,12 @@ function evaluateOne(id: string, ctx: EvalContext): { status: StrategyStatus; me
       if (bull) met.push("下緣出現反轉 K");
       else missing.push("等待下緣反轉 K");
       const triggered = bull;
-      return ev(triggered ? "triggered" : "waiting", met, missing, triggered ? "潮間帶下緣反轉：條件成立" : "潮間帶下緣觀察中");
+      return ev(
+        triggered ? "triggered" : "waiting",
+        met,
+        missing,
+        triggered ? `潮間帶下緣反轉：條件成立。停損：跌破箱體下緣 ${rangeLow.toFixed(0)}，箱體結構失效即出場` : "潮間帶下緣觀察中",
+      );
     }
     return ev("waiting", [...met, "位於箱體上緣（做多條件不成立）"], ["除非有效突破，上緣只做空方條件"], "上緣非做多位置");
   }

@@ -23,6 +23,7 @@ import type {
 } from "@shared/types";
 import type { ChipDivergenceResult } from "@shared/chip-divergence";
 import type { RetailFuturesPosition } from "../../../server/data/providers/taifex";
+import type { ChipCardWeeklyAggregate } from "../../../server/data/chipcard-archive";
 import type {
   UserStrategyDef,
   Condition,
@@ -120,8 +121,9 @@ export function fetchStockSignals(symbols: string[]): Promise<StockSignalsRespon
   return getJson<StockSignalsResponse>(`/api/stocks/signals?symbols=${encodeURIComponent(list.join(","))}`);
 }
 
-export function fetchStockSignal(symbol: string): Promise<StockSignal> {
-  return getJson<StockSignal>(`/api/stocks/${encodeURIComponent(symbol)}/signal`);
+export function fetchStockSignal(symbol: string, highlight?: string | null): Promise<StockSignal> {
+  const q = highlight ? `?highlight=${encodeURIComponent(highlight)}` : "";
+  return getJson<StockSignal>(`/api/stocks/${encodeURIComponent(symbol)}/signal${q}`);
 }
 
 import type { MarketRegime } from "@shared/types";
@@ -144,6 +146,11 @@ export async function fetchChipDivergence(): Promise<ChipDivergenceResult> {
 /** 散戶（小台/微台）留倉：全市場未平倉 − 三大法人未平倉推算，公式未經真實資料驗證，見 MEMORY-chip-divergence-engine.md */
 export async function fetchRetailFutures(contract: "MTX" | "TMF" = "TMF"): Promise<RetailFuturesPosition> {
   return getJson<RetailFuturesPosition>(`/api/retail-futures?contract=${contract}`);
+}
+
+/** 大盤籌碼本週彙總：查自己資料庫存的每日快照加總，不依賴 TAIFEX API 的歷史查詢（它沒有），見 chipcard-archive.ts */
+export async function fetchChipCardWeekly(weekStart: string): Promise<ChipCardWeeklyAggregate> {
+  return getJson<ChipCardWeeklyAggregate>(`/api/chipcard/weekly?weekStart=${weekStart}`);
 }
 
 /* ---------- Phase 3+ 自訂策略 API ---------- */
