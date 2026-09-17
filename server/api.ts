@@ -21,6 +21,7 @@ import { STRATEGIES, evaluateStrategy, getFacts, scanMarketStrategy } from "./da
 import { scanEntryZoneProximity } from "./data/entry-watch";
 import { buildPaDefaultAnalysis } from "./data/pa-analysis";
 import { fetchChipCard, fetchOptionsOISnapshot } from "./data/providers/taifex";
+import { fetchTaiwanVix } from "./data/providers/taifex-vix";
 import type { OptionsOIData } from "../shared/types";
 import { fetchPantlasStock, fetchPantlasOverview } from "./data/providers/pantlas";
 import { getUserStrategies, getUserStrategy, createUserStrategy, updateUserStrategy, deleteUserStrategy } from "./data/user-strategies";
@@ -440,6 +441,26 @@ export function createApi(): express.Router {
       try {
         const data = await fetchOptionsOISnapshot(date ?? null);
         res.json({ data, error: null });
+      } catch (e) {
+        res.status(502).json({ data: null, error: e instanceof Error ? e.message : String(e) });
+      }
+    }),
+  );
+
+  api.get(
+    "/vix",
+    wrap(async (_req, res) => {
+      try {
+        const { fetchTaiwanVix: fetchVixData } = await import("./data/providers/taifex-vix");
+        const v = await fetchVixData();
+        if (!v) {
+          res.status(502).json({ data: null, error: "VIX 資料暫時無法取得" });
+          return;
+        }
+        res.json({
+          data: { date: v.date, value: v.value, prevClose: v.prevClose, change: v.change, level: v.reading.level, trend: v.reading.trend },
+          error: null,
+        });
       } catch (e) {
         res.status(502).json({ data: null, error: e instanceof Error ? e.message : String(e) });
       }

@@ -20,6 +20,7 @@ import type {
   TrendsResponse,
   BacktestResult,
   BacktestParams,
+  VixResponse,
 } from "@shared/types";
 import type { ChipDivergenceResult } from "@shared/chip-divergence";
 import type { RetailFuturesPosition } from "../../../server/data/providers/taifex";
@@ -218,4 +219,8 @@ export async function runBacktestApi(params: BacktestParams & { userId?: string 
     throw new Error(bodyData.error ?? `HTTP ${res.status}`);
   }
   return res.json() as Promise<BacktestResult>;
+}
+
+export function fetchVix(): Promise<{ data: VixResponse | null; error: string | null }> {
+  return getJson<{ data: VixResponse | null; error: string | null }>("/api/vix");
 }

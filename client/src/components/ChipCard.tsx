@@ -7,7 +7,7 @@
 import { useMemo, useState } from "react";
 import type { ChipCardData, OptionsOIData } from "@shared/types";
 import type { ChipDivergenceResult } from "@shared/chip-divergence";
-import { fetchChipCard, fetchOptionsOI, fetchChipDivergence, fetchRetailFutures, fetchChipCardWeekly } from "@/lib/api";
+import { fetchChipCard, fetchOptionsOI, fetchChipDivergence, fetchRetailFutures, fetchChipCardWeekly, fetchVix } from "@/lib/api";
 import { fmtDate } from "@/lib/format";
 import { useAsync } from "@/lib/useAsync";
 import { BadgeCheck, Calendar, ChevronUp, Clock, TrendingDown, TrendingUp } from "lucide-react";
@@ -195,6 +195,7 @@ export default function ChipCard() {
   const { data: chipData, error: chipError, reload } = useAsync(() => fetchChipCard(today), []);
   const { data: optData } = useAsync(() => fetchOptionsOI(today), []);
   const { data: divergence } = useAsync(() => fetchChipDivergence(), []);
+  const { data: vixData } = useAsync(() => fetchVix(), []);
 
   // 本週彙總：查自己資料庫存的每日快照加總（不依賴 TAIFEX API 的歷史查詢，它沒有這功能，
   // 見 chipcard-archive.ts 的說明），只有選「本週」時才會發這個請求
@@ -344,14 +345,30 @@ export default function ChipCard() {
         </section>
       )}
 
-      {/* ── 市場恐慌指數（TAIWAN VIX）— 資料源建置中 ── */}
+      {/* ── 市場恐慌指數（TAIWAN VIX）— TAIFEX 官方免費資料 ── */}
       <div className="chip-section-label">
         <span className="chip-eyebrow">TAIWAN VIX</span>
-        <h3>市場恐慌指數</h3>
+        <h3>市場恐慌指數 <small>台指選擇權波動率</small></h3>
       </div>
-      <div className="chip-empty">
-        資料源建置中 — 台指選擇權波動率指數（TAIWAN VIX）目前尚無可用的免費資料源，待接上官方資料後才會顯示數值。
-      </div>
+      {vixData?.data ? (
+        <div className="chip-stat-grid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+          <div className="chip-stat-card">
+            <div className="chip-stat-head"><small>波動率指數</small></div>
+            <div className="chip-stat-num">{vixData.data.value.toFixed(2)}</div>
+            <div className="chip-stat-sub">
+              {vixData.data.change != null ? `${vixData.data.change >= 0 ? "+" : ""}${vixData.data.change.toFixed(2)}` : "—"}
+              {vixData.data.trend ? ` · ${vixData.data.trend}` : ""} · 前值 {vixData.data.prevClose != null ? vixData.data.prevClose.toFixed(2) : "—"}
+            </div>
+          </div>
+          <div className="chip-stat-card">
+            <div className="chip-stat-head"><small>市場情緒</small></div>
+            <div className="chip-stat-num">{vixData.data.level}</div>
+            <div className="chip-stat-sub">{vixData.data.date}（資料源：TAIFEX 官方）</div>
+          </div>
+        </div>
+      ) : (
+        <div className="chip-empty">{vixData?.error ? `市場恐慌指數讀取失敗：${vixData.error}` : "市場恐慌指數讀取中…"}</div>
+      )}
 
       {/* ── 散戶留倉（小台/微台）── */}
       <div className="chip-section-label">

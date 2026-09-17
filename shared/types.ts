@@ -591,4 +591,11 @@ export interface BatchBacktestResult {
   results: Array<{ strategyId: string; strategyName: string; result: BacktestResult }>;
 }
 
-
+export interface VixResponse {
+  date: string;
+  value: number;
+  prevClose: number | null;
+  change: number | null;
+  level: string;
+  trend: string | null;
+}
