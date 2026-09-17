@@ -119,3 +119,6 @@ client/public/__manus__/version.json
 
 # 本地使用者回饋標註（AI 讀取用，不入庫）
 feedback-inbox/
+
+# Daily archive logs
+logs/
