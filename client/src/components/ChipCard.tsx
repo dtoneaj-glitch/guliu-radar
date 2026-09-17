@@ -344,6 +344,15 @@ export default function ChipCard() {
         </section>
       )}
 
+      {/* ── 市場恐慌指數（TAIWAN VIX）— 資料源建置中 ── */}
+      <div className="chip-section-label">
+        <span className="chip-eyebrow">TAIWAN VIX</span>
+        <h3>市場恐慌指數</h3>
+      </div>
+      <div className="chip-empty">
+        資料源建置中 — 台指選擇權波動率指數（TAIWAN VIX）目前尚無可用的免費資料源，待接上官方資料後才會顯示數值。
+      </div>
+
       {/* ── 散戶留倉（小台/微台）── */}
       <div className="chip-section-label">
         <span className="chip-eyebrow">RETAIL POSITION</span>

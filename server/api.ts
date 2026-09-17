@@ -1202,11 +1202,23 @@ export function createApi(): express.Router {
  * ================================================================ */
 
 function summarizeMood(sentiment: string, totalYi: number): string {
-  if (sentiment === "樂觀" || sentiment === "偏多")
-    return `三大法人合計買超約 ${Math.abs(totalYi).toFixed(0)} 億，外資明顯進場，市場氣氛${sentiment === "樂觀" ? "樂觀" : "偏多"}`;
-  if (sentiment === "偏空" || sentiment === "恐慌")
-    return `三大法人合計賣超約 ${Math.abs(totalYi).toFixed(0)} 億，資金明顯流出，市場氣氛偏空`;
-  return `三大法人進出平衡，市場觀望氣氛濃厚`;
+  // 買賣超文字改依「法人淨額正負」決定；市場氣氛才由漲跌家數比推得。
+  // 原本兩者混用，且用 Math.abs() 丟掉正負號，會在「上漲家數多、但法人實際賣超」的
+  // 日子把方向講反（例：2026-09-16 淨額 -46 億，卻顯示「買超約 47 億」）。
+  const amount = Math.abs(totalYi).toFixed(0);
+  const netText =
+    Math.abs(totalYi) < 1
+      ? "三大法人進出接近平衡"
+      : totalYi > 0
+        ? `三大法人合計買超約 ${amount} 億`
+        : `三大法人合計賣超約 ${amount} 億`;
+  const moodText =
+    sentiment === "樂觀" ? "市場氣氛樂觀"
+    : sentiment === "偏多" ? "市場氣氛偏多"
+    : sentiment === "偏空" ? "市場氣氛偏空"
+    : sentiment === "恐慌" ? "市場氣氛恐慌"
+    : "市場觀望氣氛濃厚";
+  return `${netText}，${moodText}`;
 }
 
 function buildDashboard(snapshot: Snapshot): DashboardResponse {
