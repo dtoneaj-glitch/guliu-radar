@@ -24,7 +24,6 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { fetchBriefs, fetchChart, fetchMarketStrategyScan, fetchPaDefaultAnalysis, fetchRanking, fetchScan, fetchSearch, fetchStrategyEval, fetchStrategyScan, fetchTrends, fetchChipCard } from "@/lib/api";
-import ReviewOverlay from "@/components/ReviewOverlay";
 import StockSearch from "@/components/StockSearch";
 import DigestBanner from "@/components/DigestBanner";
 import GuideOverlay from "@/components/GuideOverlay";
@@ -1034,7 +1033,6 @@ export default function Home() {
       {isMobile && <BottomNav active={active} setActive={navTo} />}
       {searchOpen && <SearchDrawer onClose={() => setSearchOpen(false)} onPA={goPA} />}
       {guideOpen && <GuideOverlay onClose={() => setGuideOpen(false)} />}
-      <ReviewOverlay tab={active} paSymbol={paSymbol} />
       <button className="floating-help" aria-label="開啟說明" onClick={() => setGuideOpen(true)}><CircleHelp size={18} /></button>
       {/* 登入狀態指示 */}
       {isAuthenticated && (

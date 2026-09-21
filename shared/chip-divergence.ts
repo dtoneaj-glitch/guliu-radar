@@ -20,7 +20,7 @@
  * 版本化：v1→v2 是「語意變更」（多方佔比 → 淨多空比），刻意換版號避免舊資料誤解。
  */
 
-export const CHIP_DIVERGENCE_VERSION = "chip_divergence.v2";
+export const CHIP_DIVERGENCE_VERSION = "chip_divergence.v3";
 
 export type Stance = "偏多" | "偏空" | "中性";
 
@@ -43,6 +43,8 @@ export interface ChipDivergenceResult {
   retailStance: Stance;
   /** 兩方立場是否相反（其中一方中性時一律視為未分歧，避免弱訊號誤判） */
   diverged: boolean;
+  /** 外資現貨與期貨不同調（已採現貨方向，敘事會註明） */
+  foreignMixed: boolean;
   /** 組好的一句話敘事；資料不足以判斷分歧時回傳中性、如實告知缺什麼 */
   narrative: string;
   evidence: { confirmed: string[]; insufficient: string[] };
@@ -62,25 +64,43 @@ function fmtSigned(v: number): string {
   return `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
 }
 
-function classifyForeign(spotYi: number | null, futuresOI: number | null): Stance {
-  const spotSignal: Stance | null =
-    spotYi == null ? null : spotYi > FOREIGN_SPOT_DEAD_ZONE_YI ? "偏多" : spotYi < -FOREIGN_SPOT_DEAD_ZONE_YI ? "偏空" : "中性";
-  const futuresSignal: Stance | null =
-    futuresOI == null
-      ? null
-      : futuresOI > FOREIGN_FUTURES_DEAD_ZONE_OI
-        ? "偏多"
-        : futuresOI < -FOREIGN_FUTURES_DEAD_ZONE_OI
-          ? "偏空"
-          : "中性";
-
-  // 兩個訊號都有時，只有方向一致才判定；不一致視為中性（現貨期貨打架，不強行給結論）
-  if (spotSignal != null && futuresSignal != null) {
-    return spotSignal === futuresSignal ? spotSignal : "中性";
-  }
-  return spotSignal ?? futuresSignal ?? "中性";
+function spotStance(yi: number | null): Stance {
+  if (yi == null) return "中性";
+  if (yi > FOREIGN_SPOT_DEAD_ZONE_YI) return "偏多";
+  if (yi < -FOREIGN_SPOT_DEAD_ZONE_YI) return "偏空";
+  return "中性";
 }
 
+function futuresStance(oi: number | null): Stance {
+  if (oi == null) return "中性";
+  if (oi > FOREIGN_FUTURES_DEAD_ZONE_OI) return "偏多";
+  if (oi < -FOREIGN_FUTURES_DEAD_ZONE_OI) return "偏空";
+  return "中性";
+}
+
+/**
+ * 判定外資立場。
+ *
+ * 2026-09-21 修正（v3）：原本「現貨與期貨必須一致，否則回中性」會把資訊吃掉——
+ * 例如 09-18 外資現貨買超 1,028 億（偏多）但期貨淨空 43 萬口（偏空），舊規則回「中性」，
+ * 使用者看到「外資大買卻說方向不明顯」而困惑。
+ * 新規則：**現貨為主、期貨為輔**（現貨是實際資金流向，期貨常含避險成分），
+ * 兩者不同調時仍採現貨方向，並在敘事明講「現貨與期貨不同調」，把資訊保留給使用者。
+ */
+function classifyForeign(input: ChipDivergenceInput): { stance: Stance; mixed: boolean } {
+  const spot = spotStance(input.foreignSpotNetYi);
+  const fut = futuresStance(input.foreignFuturesNetOI);
+  const hasSpot = input.foreignSpotNetYi != null;
+  const hasFut = input.foreignFuturesNetOI != null;
+
+  if (hasSpot && hasFut) {
+    if (spot !== "中性" && fut !== "中性" && spot !== fut) return { stance: spot, mixed: true };
+    if (spot !== "中性") return { stance: spot, mixed: false };
+    if (fut !== "中性") return { stance: fut, mixed: false };
+    return { stance: "中性", mixed: false };
+  }
+  return { stance: hasSpot ? spot : fut, mixed: false };
+}
 function classifyRetail(netPct: number | null): Stance {
   if (netPct == null) return "中性";
   if (netPct > RETAIL_NET_DEAD_ZONE_PCT) return "偏多";
@@ -88,7 +108,7 @@ function classifyRetail(netPct: number | null): Stance {
   return "中性";
 }
 
-function foreignClause(input: ChipDivergenceInput, stance: Stance): string {
+function foreignClause(input: ChipDivergenceInput, stance: Stance, mixed = false): string {
   const parts: string[] = [];
   if (input.foreignSpotNetYi != null) {
     parts.push(input.foreignSpotNetYi >= 0 ? `現貨買超 ${input.foreignSpotNetYi.toFixed(1)} 億` : `現貨賣超 ${Math.abs(input.foreignSpotNetYi).toFixed(1)} 億`);
@@ -97,7 +117,8 @@ function foreignClause(input: ChipDivergenceInput, stance: Stance): string {
     parts.push(input.foreignFuturesNetOI >= 0 ? `期貨多單 ${input.foreignFuturesNetOI.toLocaleString()} 口` : `期貨空單 ${Math.abs(input.foreignFuturesNetOI).toLocaleString()} 口`);
   }
   const detail = parts.length > 0 ? `：${parts.join("、")}` : "";
-  return `外資${stance}${detail}`;
+  const note = mixed ? "（現貨與期貨不同調）" : "";
+  return `外資${stance}${detail}${note}`;
 }
 
 function retailClause(input: ChipDivergenceInput, stance: Stance): string {
@@ -127,27 +148,29 @@ export function evaluateChipDivergence(input: ChipDivergenceInput): ChipDivergen
   if (input.foreignFuturesNetOI == null) insufficient.push("外資期貨未平倉資料不足");
   if (input.retailNetRatioPct == null) insufficient.push("散戶多空比資料不足");
 
-  const foreignStance = classifyForeign(input.foreignSpotNetYi, input.foreignFuturesNetOI);
+  const foreign = classifyForeign(input);
+  const foreignStance = foreign.stance;
   const retailStance = classifyRetail(input.retailNetRatioPct);
   const diverged = foreignStance !== "中性" && retailStance !== "中性" && foreignStance !== retailStance;
 
-  if (foreignStance !== "中性") confirmed.push(foreignClause(input, foreignStance));
+  if (foreignStance !== "中性") confirmed.push(foreignClause(input, foreignStance, foreign.mixed));
   if (retailStance !== "中性") confirmed.push(retailClause(input, retailStance));
 
   let narrative: string;
   if (input.foreignSpotNetYi == null && input.foreignFuturesNetOI == null && input.retailNetRatioPct == null) {
     narrative = "今日籌碼資料不足，暫無法判斷外資與散戶是否分歧。";
   } else if (diverged) {
-    narrative = `${foreignClause(input, foreignStance)}；${retailClause(input, retailStance)}——籌碼出現分歧。`;
+    narrative = `${foreignClause(input, foreignStance, foreign.mixed)}；${retailClause(input, retailStance)}——籌碼出現分歧。`;
   } else if (foreignStance === "中性" && retailStance === "中性") {
     narrative = "外資與散戶籌碼方向都不明顯，今日無明顯分歧訊號。";
   } else {
-    narrative = `${foreignClause(input, foreignStance)}；${retailClause(input, retailStance)}——雙方方向一致，無分歧。`;
+    narrative = `${foreignClause(input, foreignStance, foreign.mixed)}；${retailClause(input, retailStance)}——雙方方向一致，無分歧。`;
   }
 
   return {
     version: CHIP_DIVERGENCE_VERSION,
     foreignStance,
+    foreignMixed: foreign.mixed,
     retailStance,
     diverged,
     narrative,

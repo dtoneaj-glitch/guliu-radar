@@ -21,9 +21,21 @@ describe("chip-divergence", () => {
     expect(r.narrative).toContain("淨多空比");
   });
 
-  it("外資現貨、期貨方向一致時才判定外資立場；方向打架時回退中性", () => {
+  it("外資現貨與期貨不同調時，以現貨為主要立場並標記 mixed（v3）", () => {
     const r = evaluateChipDivergence(full({ foreignSpotNetYi: 100, foreignFuturesNetOI: -20000 }));
-    expect(r.foreignStance).toBe("中性");
+    expect(r.foreignStance).toBe("偏多"); // 現貨買超為準
+    expect(r.foreignMixed).toBe(true);
+    expect(r.narrative).toContain("不同調");
+  });
+
+  it("實際案例：外資現貨買超 1028 億、期貨淨空 43 萬口 → 應判偏多而非中性", () => {
+    const r = evaluateChipDivergence(full({ foreignSpotNetYi: 1028, foreignFuturesNetOI: -430002, retailNetRatioPct: 5.4 }));
+    expect(r.foreignStance).toBe("偏多");
+    expect(r.foreignMixed).toBe(true);
+    expect(r.retailStance).toBe("中性");
+    expect(r.diverged).toBe(false);
+    expect(r.narrative).toContain("外資偏多");
+    expect(r.narrative).toContain("不同調");
   });
 
   it("外資與散戶方向相同 → 不分歧", () => {
