@@ -101,7 +101,23 @@ def run_poc():
 
     sim_raw = ask("      用模擬環境？(y=模擬 / Enter=正式)：", "n").lower()
     simulation = sim_raw.startswith("y")
-    symbol = ask("      要看哪一檔代號？(Enter=2330)：", "2330")
+
+    print("")
+    print("      要測哪一種行情？")
+    print("        1 = 股票現貨（例如 2330）—— 交易時段 09:00-13:30")
+    print("        2 = 期貨夜盤 TXF（台指期）—— 夜盤 15:00-次日 05:00，現在就能測")
+    market = ask("      選 1 或 2 [Enter=1]：", "1")
+
+    if market.strip().startswith("2"):
+        quote_api = api.FutQuote
+        default_symbol = "TXF"
+        note = "（凱基期貨行情目前僅開放 TXF 這一檔）"
+    else:
+        quote_api = api.Quote
+        default_symbol = "2330"
+        note = ""
+
+    symbol = ask(f"      要看哪一檔代號？(Enter={default_symbol}){note}：", default_symbol)
     try:
         seconds = int(ask("      觀察幾秒？(Enter=20)：", "20"))
     except ValueError:
@@ -110,8 +126,8 @@ def run_poc():
     print(f"\n      登入中（{'模擬' if simulation else '正式'}環境）…")
     api = kgi.login(person_id, person_pwd, simulation)
     print("      [OK] 登入成功")
-    api.Quote.set_cb_tick(on_tick)
-    api.Quote.subscribe_tick(symbol)
+    quote_api.set_cb_tick(on_tick)
+    quote_api.subscribe_tick(symbol)
     print(f"      已訂閱 {symbol}，開始觀察 {seconds} 秒（每筆成交都會印一行）\n")
 
     deadline = time.time() + seconds
@@ -168,8 +184,10 @@ def main():
         return 1
     print("[4/4] 結果")
     if COUNT["n"] == 0:
-        print("      [!] 0 筆 tick。可能：非交易時段（台股 09:00-13:30）、行情權限未開、或憑證問題。")
-        print("          建議在交易時段再測一次。")
+        print("      [!] 0 筆 tick。可能原因：")
+        print("          - 股票現貨：非交易時段（台股 09:00-13:30；現貨沒有夜盤）")
+        print("          - 期貨 TXF：非夜盤時段（15:00-次日 05:00）或非交易日下午")
+        print("          - 行情權限未開、憑證問題、帳密錯誤")
     else:
         print(f"      [OK] 共收到 {COUNT['n']} 筆 tick —— 帳號、憑證、行情權限都正常！")
     pause()
