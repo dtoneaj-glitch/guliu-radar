@@ -34,21 +34,25 @@ export async function getChipDivergence(snapshot: Snapshot): Promise<ChipDiverge
     foreignFuturesNetOI = null;
   }
 
-  // 散戶（微台）多方佔比：目前只有當日快照，沒有昨日基準可比對，
-  // retailLongRatioChangePct 暫時給 null（如實承認缺這塊，不編造變動幅度）。
-  // 之後要補上「當日增減」，需要把這份快照也存進 SQLite archive，用前一天的存檔比對。
-  let retailLongRatioPct: number | null = null;
+  // 散戶淨多空比：小台（MTX）為主、微台（TMF）為輔（使用者指定兩者並列）。
+  // 目前只有當日快照、沒有昨日基準，retailNetRatioChangePct 暫時給 null（如實承認缺這塊）。
+  // 之後要補「當日變動」，需把這份快照也存進 SQLite archive，用前一天存檔比對。
+  let retailNetRatioPct: number | null = null;
+  let retailNetRatioPctTmf: number | null = null;
   try {
-    const retail = await fetchRetailFuturesPosition("TMF");
-    retailLongRatioPct = retail?.retailLongRatioPct ?? null;
+    const [mtx, tmf] = await Promise.all([fetchRetailFuturesPosition("MTX"), fetchRetailFuturesPosition("TMF")]);
+    retailNetRatioPct = mtx?.retailNetRatioPct ?? null;
+    retailNetRatioPctTmf = tmf?.retailNetRatioPct ?? null;
   } catch {
-    retailLongRatioPct = null;
+    retailNetRatioPct = null;
+    retailNetRatioPctTmf = null;
   }
 
   return evaluateChipDivergence({
     foreignSpotNetYi,
     foreignFuturesNetOI,
-    retailLongRatioPct,
-    retailLongRatioChangePct: null,
+    retailNetRatioPct,
+    retailNetRatioPctTmf,
+    retailNetRatioChangePct: null,
   });
 }

@@ -160,19 +160,20 @@ function DivergenceCard({ d }: { d: ChipDivergenceResult | null }) {
   );
 }
 
-/* ── 散戶（小台/微台）留倉卡（公式未經真實驗證，警示標記不能拿掉）── */
+/* ── 散戶（小台/微台）留倉卡（2026-09-21 已對照官方 API 修正、改為淨多空比）── */
 function RetailCard({ contract, label }: { contract: "MTX" | "TMF"; label: string }) {
   const { data } = useAsync(() => fetchRetailFutures(contract), [contract]);
   if (!data) return null;
+  const pct = data.retailNetRatioPct;
   return (
     <div className="chip-retail-card">
       <div className="chip-retail-head">
         <b>{label}散戶留倉</b>
-        <span className="chip-retail-unverified">公式待驗證</span>
+        <span className="chip-retail-unverified">淨多空比</span>
       </div>
       <div className="chip-retail-nums">
-        <div><small>多方佔比</small><b style={{ color: (data.retailLongRatioPct ?? 50) > 50 ? "var(--primary)" : "var(--accent)" }}>
-          {data.retailLongRatioPct != null ? `${data.retailLongRatioPct.toFixed(1)}%` : "—"}
+        <div><small>淨多空比</small><b style={{ color: pct == null ? "var(--accent)" : pct > 0 ? "var(--primary)" : "var(--accent)" }}>
+          {pct != null ? `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%` : "—"}
         </b></div>
         <div><small>多方留倉</small><b>{data.retailLong.toLocaleString()} 口</b></div>
         <div><small>空方留倉</small><b>{data.retailShort.toLocaleString()} 口</b></div>

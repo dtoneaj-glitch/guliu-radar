@@ -408,36 +408,35 @@ export async function fetchOptionsOISnapshot(date: string | null = null): Promis
 
 export interface RetailFuturesPosition {
   asOf: string;
-  contractCode: string;
-  /** 全市場未平倉（多方／空方，口數） */
-  marketLong: number;
-  marketShort: number;
+  contractCode: "MTX" | "TMF";
+  /** 全市場未平倉口數（期貨多空兩側口數相等，即該契約總未平倉） */
+  marketOI: number;
   /** 三大法人合計未平倉（多方／空方，口數） */
   institutionalLong: number;
   institutionalShort: number;
   /** 散戶（其他）未平倉＝全市場－三大法人 */
   retailLong: number;
   retailShort: number;
-  /** 散戶多方佔比 0–100（= retailLong / (retailLong + retailShort) × 100） */
-  retailLongRatioPct: number | null;
+  /** 散戶淨多空比（有號 −100~+100）＝(散戶多−散戶空)/市場總未平倉×100；正值＝散戶偏多 */
+  retailNetRatioPct: number | null;
 }
 
-/** 從一列 DailyFutRow 裡，依候選欄位名稱陣列找第一個有值的欄位（容錯：實際欄位名稱未經真實 API 驗證） */
-function pickField(row: DailyFutRow, candidates: string[]): number {
-  for (const key of candidates) {
-    if (row[key] != null && row[key] !== "") return num(row[key]);
-  }
-  return 0;
-}
+/** 契約代碼 → TAIFEX 三大法人端點使用的中文契約名（2026-09-21 對照真實 API 後補上） */
+const CONTRACT_CN: Record<"MTX" | "TMF", string> = {
+  MTX: "小型臺指期貨",
+  TMF: "微型臺指期貨",
+};
 
 /**
- * 計算指定契約（預設微型臺指 TMF）的散戶多空比。
- * date=null 時自動找最近交易日。
+ * 計算指定契約（小台 MTX／微台 TMF）的散戶淨多空比。date=null 時自動找最近交易日。
  *
- * ⚠️ DailyMarketReportFut 這份端點在本專案是第一次使用，欄位名稱是依 TAIFEX
- * 其他端點的命名慣例＋公開文件描述推測的，部署後第一次呼叫務必實際檢查
- * marketLong/marketShort 是否為合理非零數字，不是的話代表欄位名稱猜錯了，
- * 需要對照真實回應調整 pickField() 的候選清單。
+ * 2026-09-21 對照真實 API 修正（v1 有三個錯誤，導致永遠回 null）：
+ *   ① 三大法人端點的 ContractCode 是「中文」契約名（小型臺指期貨／微型臺指期貨），不是 MTX/TMF。
+ *   ② DailyMarketReportFut 只有單一 OpenInterest（總量），沒有多空拆分；
+ *      因期貨多空兩側未平倉口數相等，全市場多＝空＝總未平倉，故散戶＝總量−法人。
+ *   ③ 同一契約有「一般」與「盤後」兩種場次，還有價差組合列（OI 為 '-'）→ 只取一般場次、僅累加有限值。
+ *
+ * 公式（對照 MacroMicro／玩股網）：散戶淨多空比 = (散戶多−散戶空) ÷ 市場總未平倉 × 100。
  */
 export async function fetchRetailFuturesPosition(
   contractCode: "MTX" | "TMF" = "TMF",
@@ -453,44 +452,44 @@ export async function fetchRetailFuturesPosition(
       ),
     ]);
 
-    // 全市場未平倉：加總該契約代碼底下所有到期月份的行（近月+遠月合計，避免月份判斷出錯）
-    let marketLong = 0;
-    let marketShort = 0;
+    // 全市場未平倉：只取該契約、一般交易場次、OpenInterest 為有效數字的列（排除盤後與價差組合列）
+    let marketOI = 0;
     for (const row of dailyRows) {
-      const code = row["ContractCode"] ?? row["Contract"] ?? row["契約代號"] ?? "";
-      if (!code.startsWith(contractCode)) continue;
-      marketLong += pickField(row, ["OpenInterest(Long)", "OpenInterestLong", "未沖銷契約數(多方)"]);
-      marketShort += pickField(row, ["OpenInterest(Short)", "OpenInterestShort", "未沖銷契約數(空方)"]);
+      const code = row["Contract"] ?? row["ContractCode"] ?? "";
+      if (code !== contractCode) continue;
+      const session = row["TradingSession"] ?? "";
+      if (session && session !== "一般") continue;
+      const oi = Number(row["OpenInterest"]);
+      if (Number.isFinite(oi)) marketOI += oi;
     }
 
-    // 三大法人合計未平倉（外資及陸資＋投信＋自營商）
+    // 三大法人合計未平倉（外資及陸資＋投信＋自營商），以中文契約名比對
+    const cnName = CONTRACT_CN[contractCode];
     let institutionalLong = 0;
     let institutionalShort = 0;
     for (const row of institutionalRows) {
-      if (row.ContractCode !== contractCode) continue;
+      if (row.ContractCode !== cnName) continue;
       institutionalLong += num(row["OpenInterest(Long)"]);
       institutionalShort += num(row["OpenInterest(Short)"]);
     }
 
-    if (marketLong === 0 && marketShort === 0) {
-      // DailyMarketReportFut 抓不到資料（欄位名稱可能猜錯，或當日無此契約資料），失敗安全回傳 null
+    if (marketOI <= 0) {
+      // 抓不到資料（當日休市、契約代碼不符、或 API 欄位改版），失敗安全回傳 null
       return null;
     }
 
-    const retailLong = Math.max(0, marketLong - institutionalLong);
-    const retailShort = Math.max(0, marketShort - institutionalShort);
-    const retailTotal = retailLong + retailShort;
+    const retailLong = Math.max(0, marketOI - institutionalLong);
+    const retailShort = Math.max(0, marketOI - institutionalShort);
 
     return {
       asOf: targetDate,
       contractCode,
-      marketLong,
-      marketShort,
+      marketOI,
       institutionalLong,
       institutionalShort,
       retailLong,
       retailShort,
-      retailLongRatioPct: retailTotal > 0 ? Math.round((retailLong / retailTotal) * 1000) / 10 : null,
+      retailNetRatioPct: Math.round(((retailLong - retailShort) / marketOI) * 1000) / 10,
     };
   } catch {
     return null;
