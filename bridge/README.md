@@ -31,18 +31,31 @@ KGI_SYMBOLS=2330,2454   # 選填；不填則讀 bridge/symbols.txt
 KGI_BRIDGE_PORT=3010
 ```
 
-## 三、先做 PoC（強烈建議第一步）
+## 三、先做 PoC（最簡單方式：雙擊）
 
-只驗證「登入 + 憑證 + 權限」通不通，不碰股流：
+> 不用打任何指令。
+
+1. 到專案資料夾的 `scripts\` 底下，**雙擊 `poc-kgi.bat`**。
+2. 視窗會依序做四件事，你只要照著回答：
+   - `[1/4]` 顯示 Python 版本（若顯示 AutoClaw 內建 Python，建議改用一般 Python）
+   - `[2/4]` 檢查 SDK；沒裝會問「要現在自動安裝嗎？」→ 按 **Y**
+   - `[3/4]` 問你：身分證字號、密碼、要用模擬還是正式（直接按 Enter＝正式）、看哪一檔（Enter＝2330）、觀察幾秒（Enter＝20）
+   - `[4/4]` 開始印出每一筆成交
+3. 看到一行行的 `#1 20260921103005 2330 成交=100.5 漲跌幅=0.5% 延遲=0.001s` → **憑證、權限、連線全部正常**。
+4. 若顯示 `[!] 0 筆 tick` → 多半是非交易時段（台股 09:00–13:30），改在盤中再測。
+
+### 若你還沒有一版「一般」的 Python
+
+到 <https://www.python.org/downloads/> 下載安裝，安裝時**勾選 `Add python.exe to PATH`**。
+裝完後，把 `scripts\poc-kgi.bat` 裡的 `python` 改成完整路徑（例如 `C:\Python313\python.exe`）再雙擊。
+
+### 手動方式（進階）
 
 ```bat
-set KGI_ID=xxxx
-set KGI_PWD=xxxx
+set KGI_ID=你的身分證字號
+set KGI_PWD=你的密碼
 python bridge\poc_subscribe.py 2330 20
 ```
-
-看到每秒陸續印出 `#1 20260921103005 2330 close=... pct=...` 就代表環境沒問題。
-若 20 秒內 0 筆 → 多半是非交易時段、權限未開、或憑證問題。
 
 ## 四、啟動橋接
 
