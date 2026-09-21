@@ -29,6 +29,12 @@ export interface TwseDailyResult {
 }
 
 /** 民國日期 "1150904" → "2026-09-04" */
+/** 通用日期解析：MI_INDEX 回西元 YYYYMMDD，openapi 回民國 YYYMMDD → 一律轉 ISO */
+export function parseTwseDate(s: string): string {
+  const t = String(s ?? "").replace(/[\/\-]/g, "");
+  if (/^\d{8}$/.test(t) && Number(t.slice(0, 4)) > 1900) return `${t.slice(0, 4)}-${t.slice(4, 6)}-${t.slice(6, 8)}`;
+  return rocToIso(t);
+}
 export function rocToIso(roc: string): string {
   const y = Number(roc.slice(0, roc.length - 4)) + 1911;
   const m = roc.slice(-4, -2);
@@ -37,8 +43,78 @@ export function rocToIso(roc: string): string {
 }
 
 const OPENAPI = "https://openapi.twse.com.tw/v1";
+const RWD_MI_INDEX = "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX";
+
+/** 由 rwd 的「漲跌(+/-)」欄（含 HTML 色碼）取出正負號 */
+function signOfChange(raw: string): number {
+  if (!raw) return 1;
+  if (/color:red/.test(raw) || raw.includes("+")) return 1;
+  if (/color:green/.test(raw) || raw.includes("-")) return -1;
+  return 1;
+}
+
+/**
+ * 取指定日期（YYYY-MM-DD）的每日收盤行情（全部）。
+ *
+ * 2026-09-21 修正：原本只用 openapi 的 STOCK_DAY_ALL，該端點**當天不會更新**
+ * （09-21 晚上仍回 09-18），導致整個 App 慢一天。改走 rwd MI_INDEX，當日即可取得。
+ */
+async function fetchTwseDailyByDate(iso: string): Promise<TwseDailyResult | null> {
+  const ymd = iso.replace(/-/g, "");
+  const res = await fetchJson<{ stat: string; date?: string; tables?: { title?: string; fields: string[]; data: string[][] }[] }>(
+    `${RWD_MI_INDEX}?date=${ymd}&type=ALL&response=json`,
+  );
+  if (res.stat !== "OK" || !Array.isArray(res.tables)) return null;
+  const table = res.tables.find((t) => (t.title ?? "").includes("每日收盤行情"));
+  if (!table || !Array.isArray(table.data) || table.data.length < 100) return null;
+  const idx = (name: string) => table.fields.indexOf(name);
+  const symIdx = idx("證券代號");
+  const closeIdx = idx("收盤價");
+  const signIdx = idx("漲跌(+/-)");
+  const chgIdx = idx("漲跌價差");
+  const volIdx = idx("成交股數");
+  const valIdx = idx("成交金額");
+  const openIdx = idx("開盤價");
+  const highIdx = idx("最高價");
+  const lowIdx = idx("最低價");
+  const nameIdx = idx("證券名稱");
+  if (symIdx < 0 || closeIdx < 0 || chgIdx < 0) return null;
+  const rows: TwseDailyRow[] = [];
+  for (const r of table.data) {
+    const symbol = String(r[symIdx] ?? "").trim();
+    if (!/^\d{4}[A-Z]?$/.test(symbol)) continue;
+    const close = num(r[closeIdx]);
+    const rawChg = num(r[chgIdx]); // 除權息當日此欄可能不是數字 → NaN（上層會標記 exDividend）
+    const change = Number.isFinite(rawChg) ? rawChg * signOfChange(signIdx >= 0 ? r[signIdx] : "") : Number.NaN;
+    const value = num(r[valIdx]);
+    if (!Number.isFinite(close) || close <= 0 || !(value > 0)) continue;
+    rows.push({
+      symbol,
+      name: String(r[nameIdx] ?? "").trim(),
+      open: openIdx >= 0 ? num(r[openIdx]) : close,
+      high: highIdx >= 0 ? num(r[highIdx]) : close,
+      low: lowIdx >= 0 ? num(r[lowIdx]) : close,
+      close,
+      change,
+      volumeShares: volIdx >= 0 ? num(r[volIdx]) : 0,
+      value,
+    });
+  }
+  if (rows.length < 100) return null;
+  const date = res.date ? parseTwseDate(res.date) : iso;
+  return { date, rows };
+}
 
 export async function fetchTwseDailyAll(): Promise<TwseDailyResult> {
+  // 1) 先試最近 5 天（含今日）的 rwd 行情：當日即可取得
+  for (let back = 0; back <= 4; back++) {
+    const d = new Date();
+    d.setDate(d.getDate() - back);
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const res = await fetchTwseDailyByDate(iso).catch(() => null);
+    if (res) return res;
+  }
+  // 2) 後備：openapi STOCK_DAY_ALL（可能延遲一天）
   const raw = await fetchJson<Record<string, string>[]>(`${OPENAPI}/exchangeReport/STOCK_DAY_ALL`);
   if (!Array.isArray(raw) || raw.length === 0) throw new Error("STOCK_DAY_ALL 回傳空資料");
   const rows: TwseDailyRow[] = raw
