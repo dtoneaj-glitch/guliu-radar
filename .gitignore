@@ -134,3 +134,6 @@ server/data/audit-log.jsonl
 # 凱基橋接產物
 bridge/__pycache__/
 bridge/logs/
+
+# 本機資料備份
+backups/

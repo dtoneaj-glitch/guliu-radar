@@ -1,3 +1,5 @@
+import "../server/load-env";
+
 /**
  * 股流 Radar — 每日存檔排程腳本（可獨立執行，不需要 dev server 常駐）
  *

@@ -15,3 +15,5 @@ echo [%date% %time%] run start >> "%LOG%"
 call "node_modules\.bin\tsx.cmd" "scripts\daily-archive.ts" >> "%LOG%" 2>&1
 echo [%date% %time%] run exit=%errorlevel% >> "%LOG%"
 endlocal
+
+/* rewritten */

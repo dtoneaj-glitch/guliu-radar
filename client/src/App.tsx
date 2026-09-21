@@ -7,12 +7,15 @@ import { AuthProvider } from "./lib/auth";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import { Terms, Privacy } from "./pages/Legal";
 
 function Router() {
   return (
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/" component={Home} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/privacy" component={Privacy} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

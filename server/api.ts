@@ -23,6 +23,51 @@ import { buildPaDefaultAnalysis } from "./data/pa-analysis";
 import { fetchChipCard, fetchOptionsOISnapshot } from "./data/providers/taifex";
 import { fetchTaiwanVix } from "./data/providers/taifex-vix";
 import { getLiveQuotes, isLiveEnabled, isBridgeHealthy, getLiveLastError } from "./data/providers/kgi-live";
+/* ================================================================
+ * 登入/註冊限流（記憶體計數，重啟即清空；測試環境夠用）
+ * ================================================================ */
+interface Attempt { count: number; firstAt: number; blockedUntil: number }
+const AUTH_ATTEMPTS = new Map<string, Attempt>();
+const AUTH_WINDOW_MS = 15 * 60 * 1000;
+const AUTH_MAX_ATTEMPTS = 10;
+const AUTH_BLOCK_MS = 15 * 60 * 1000;
+
+function authKey(req: import("express").Request, username: string): string {
+  return `${req.ip ?? "unknown"}::${username.toLowerCase()}`;
+}
+
+/** 回傳剩餘封鎖秒數；0 表示可繼續 */
+function authBlockedSeconds(key: string): number {
+  const a = AUTH_ATTEMPTS.get(key);
+  if (!a) return 0;
+  const now = Date.now();
+  if (a.blockedUntil > now) return Math.ceil((a.blockedUntil - now) / 1000);
+  if (now - a.firstAt > AUTH_WINDOW_MS) AUTH_ATTEMPTS.delete(key);
+  return 0;
+}
+
+function authRecordFailure(key: string): void {
+  const now = Date.now();
+  const a = AUTH_ATTEMPTS.get(key);
+  if (!a || now - a.firstAt > AUTH_WINDOW_MS) {
+    AUTH_ATTEMPTS.set(key, { count: 1, firstAt: now, blockedUntil: 0 });
+    return;
+  }
+  a.count += 1;
+  if (a.count >= AUTH_MAX_ATTEMPTS) a.blockedUntil = now + AUTH_BLOCK_MS;
+}
+
+function authClear(key: string): void {
+  AUTH_ATTEMPTS.delete(key);
+}
+
+/** 密碼政策：至少 8 碼，且同時含英文字母與數字 */
+function passwordPolicyError(pwd: string): string | null {
+  if (typeof pwd !== "string" || pwd.length < 8) return "密碼至少 8 個字元";
+  if (!/[A-Za-z]/.test(pwd) || !/[0-9]/.test(pwd)) return "密碼需同時包含英文字母與數字";
+  return null;
+}
+
 import type { OptionsOIData } from "../shared/types";
 import { fetchPantlasStock, fetchPantlasOverview } from "./data/providers/pantlas";
 import { getUserStrategies, getUserStrategy, createUserStrategy, updateUserStrategy, deleteUserStrategy } from "./data/user-strategies";
@@ -560,8 +605,9 @@ export function createApi(): express.Router {
         res.status(400).json({ error: "帳號長度 2-20 字元" });
         return;
       }
-      if (password.length < 6) {
-        res.status(400).json({ error: "密碼至少 6 個字元" });
+      const policyError = passwordPolicyError(password);
+      if (policyError) {
+        res.status(400).json({ error: policyError });
         return;
       }
       const { createUser } = await import("./data/users");
@@ -579,6 +625,12 @@ export function createApi(): express.Router {
     express.json(),
     wrap(async (req, res) => {
       const { username, password } = req.body as { username: string; password: string };
+      const key = authKey(req, String(username ?? ""));
+      const blocked = authBlockedSeconds(key);
+      if (blocked > 0) {
+        res.status(429).json({ error: `嘗試次數過多，請於 ${blocked} 秒後再試` });
+        return;
+      }
       if (!username || !password) {
         res.status(400).json({ error: "帳號密碼皆需填寫" });
         return;
@@ -586,9 +638,11 @@ export function createApi(): express.Router {
       const { login } = await import("./data/users");
       const result = login(username, password);
       if (!result) {
+        authRecordFailure(key);
         res.status(401).json({ error: "帳號或密碼錯誤" });
         return;
       }
+      authClear(key);
       res.json(result);
     }),
   );
@@ -1028,6 +1082,22 @@ export function createApi(): express.Router {
         return;
       }
       const { watchlist } = req.body as { watchlist: Array<{ symbol: string; groups: string[] }> };
+      // 後端驗證：避免寫入超長或非法內容（前端上限 200 檔）
+      if (!Array.isArray(watchlist) || watchlist.length > 200) {
+        res.status(400).json({ error: "自選股格式不正確：需為陣列且不超過 200 檔" });
+        return;
+      }
+      for (const item of watchlist) {
+        const sym = String(item?.symbol ?? "");
+        if (!/^[0-9]{4,6}[A-Z]?$/.test(sym)) {
+          res.status(400).json({ error: `自選股格式不正確：代號 ${sym || "(空)"}` });
+          return;
+        }
+        if (!Array.isArray(item?.groups) || item.groups.length > 10 || item.groups.some((g) => typeof g !== "string" || g.length > 16)) {
+          res.status(400).json({ error: `自選股格式不正確：群組標籤 ${sym}` });
+          return;
+        }
+      }
       const prev = findUserById(req.params.userId)?.watchlist ?? [];
       const user = updateWatchlist(req.params.userId, watchlist);
       if (!user) {
@@ -1265,6 +1335,25 @@ export function createApi(): express.Router {
     }),
   );
 
+  // ========== 健康檢查 ==========
+
+  api.get(
+    "/health",
+    wrap(async (_req, res) => {
+      const { JWT_SECRET_SOURCE } = await import("./data/users");
+      const { listArchiveDates } = await import("./data/archive");
+      let archiveDates: string[] = [];
+      try { archiveDates = listArchiveDates(); } catch { /* ignore */ }
+      const liveEnabled = isLiveEnabled();
+      res.json({
+        ok: true,
+        uptimeSeconds: Math.round(process.uptime()),
+        jwtSecretSource: JWT_SECRET_SOURCE,
+        archive: { days: archiveDates.length, latest: archiveDates[0] ?? null },
+        live: { enabled: liveEnabled, healthy: liveEnabled ? await isBridgeHealthy() : false },
+      });
+    }),
+  );
   // ========== 管理端（僅限本機連線，或設定 ADMIN_TOKEN 後帶 x-admin-token） ==========
 
   function isAdminRequest(req: import("express").Request): boolean {

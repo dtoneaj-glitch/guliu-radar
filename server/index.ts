@@ -1,3 +1,5 @@
+// 必須是第一個 import：確保 .env 在其它模組讀取 process.env 之前載入
+import "./load-env";
 import express from "express";
 import { createServer } from "http";
 import path from "path";

@@ -9,8 +9,17 @@ import { randomBytes, scryptSync, timingSafeEqual, createHmac } from "node:crypt
 import fs from "node:fs";
 import path from "node:path";
 
-/** JWT 簽章金鑰（實際部署應用環境變數） */
-const JWT_SECRET = process.env.JWT_SECRET ?? "guliu-radar-dev-secret-change-in-prod";
+/** JWT 簽章金鑰：一律由 .env 的 JWT_SECRET 提供。 */
+const DEV_FALLBACK_SECRET = "guliu-radar-dev-secret-change-in-prod";
+const RAW_SECRET = process.env.JWT_SECRET?.trim() ?? "";
+export const JWT_SECRET_SOURCE: "env" | "dev-fallback" = RAW_SECRET ? "env" : "dev-fallback";
+if (!RAW_SECRET) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("JWT_SECRET 未設定：正式環境禁止使用預設密鑰，請在 .env 設定後重啟。");
+  }
+  console.warn("[security] 未設定 JWT_SECRET，暫用開發密鑰；正式環境將拒絕啟動（請在 .env 設定）。");
+}
+const JWT_SECRET = RAW_SECRET || DEV_FALLBACK_SECRET;
 const JWT_EXPIRES_IN = "7d"; // 7 天有效期
 
 export interface User {

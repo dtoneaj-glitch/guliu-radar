@@ -126,6 +126,28 @@ function syncToServer(items: WatchItem[]): void {
   }
 }
 
+/**
+ * 以伺服器資料覆蓋本機（登入時使用；伺服器為準）。
+ * 會更新模組快取、寫入 localStorage 並通知訂閱者，且不再回推伺服器（避免迴圈）。
+ */
+export function replaceFromServer(items: WatchItem[]): void {
+  const cleaned = items
+    .filter((i) => i && typeof i.symbol === "string" && Array.isArray(i.groups))
+    .map((i) => ({
+      symbol: i.symbol,
+      groups: i.groups.filter((g) => typeof g === "string"),
+      ...(typeof i.costPrice === "number" && Number.isFinite(i.costPrice) ? { costPrice: i.costPrice } : {}),
+    }));
+  const cur = load();
+  const next: Store = { items: cleaned, groups: cur.groups };
+  cache = next;
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify({ items: next.items, groups: next.groups.filter((g) => !PRESET_IDS.has(g.id)) }));
+  } catch {
+    /* ignore */
+  }
+  listeners.forEach((l) => l());
+}
 function persist(next: Store) {
   cache = next;
   try {

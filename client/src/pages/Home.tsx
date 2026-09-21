@@ -1020,7 +1020,15 @@ export default function Home() {
                       : active === "strategy" ? <StrategyBuilder goPA={goPA} />
                       : <Watchlist goPA={goPA} />
           )}
-          <footer className="page-footer"><span>股流 Radar · 盤後市場焦點</span><span>僅供公開資料整理與研究，不構成投資建議。</span></footer>
+          <footer className="page-footer">
+            <span>股流 Radar · 盤後市場焦點</span>
+            <span>
+              僅供公開資料整理與研究，不構成投資建議。
+              <a href="/terms" style={{ marginLeft: 10 }}>服務條款</a>
+              ·
+              <a href="/privacy">隱私權政策</a>
+            </span>
+          </footer>
         </main>
       </div>
       {isMobile && <BottomNav active={active} setActive={navTo} />}

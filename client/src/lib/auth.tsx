@@ -6,6 +6,7 @@
  */
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { replaceFromServer } from "./watchlist";
 import type { AuthUser } from "@shared/types";
 
 const TOKEN_KEY = "gr.auth.token";
@@ -169,18 +170,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .map((x) => ({ symbol: x.symbol, groups: x.groups.filter((g: unknown) => typeof g === "string") }));
         }
       }
-      // 合併：以本地為主，補上雲端有的、本地沒有的
-      const localSyms = new Set(localItems.map((i) => i.symbol));
-      const merged = [...localItems];
-      for (const item of res.items) {
-        if (!localSyms.has(item.symbol)) merged.push(item);
+      // 以伺服器為準：伺服器有資料 → 覆蓋本機；伺服器為空 → 把本機上傳（首次登入遷移）
+      if (res.items.length > 0) {
+        replaceFromServer(res.items);
+      } else if (localItems.length > 0) {
+        await updateWatchlist(localItems);
       }
-      const uniqueMap = new Map<string, { symbol: string; groups: string[] }>();
-      for (const item of merged) uniqueMap.set(item.symbol, item);
-      const finalItems = [...uniqueMap.values()];
-      localStorage.setItem(localKey, JSON.stringify({ items: finalItems, groups: [] }));
-      // 觸發 useWatchlist 重載
-      window.dispatchEvent(new Event("storage"));
     } catch { /* ignore */ }
   }, [user?.id]);
 
