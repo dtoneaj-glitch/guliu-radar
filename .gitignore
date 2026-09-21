@@ -127,3 +127,6 @@ logs/
 server/data/users.json
 server/data/notifications.json
 server/data/user-strategies.json
+
+# 稽核紀錄（執行期資料）
+server/data/audit-log.jsonl

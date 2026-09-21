@@ -968,6 +968,11 @@ export function createApi(): express.Router {
         res.status(401).json({ error: "權杖無效或已過期" });
         return;
       }
+      // 擁有權檢查：權杖必須屬於路徑上的該使用者，否則等於任何人可讀別人的自選股
+      if (payload.userId !== req.params.userId) {
+        res.status(403).json({ error: "無權存取此使用者的資料" });
+        return;
+      }
       const user = findUserById(req.params.userId);
       if (!user) {
         res.status(404).json({ error: "用戶不存在" });
@@ -993,11 +998,36 @@ export function createApi(): express.Router {
         res.status(401).json({ error: "權杖無效或已過期" });
         return;
       }
+      // 擁有權檢查：只能改自己的自選股
+      if (payload.userId !== req.params.userId) {
+        res.status(403).json({ error: "無權修改此使用者的資料" });
+        return;
+      }
       const { watchlist } = req.body as { watchlist: Array<{ symbol: string; groups: string[] }> };
+      const prev = findUserById(req.params.userId)?.watchlist ?? [];
       const user = updateWatchlist(req.params.userId, watchlist);
       if (!user) {
         res.status(404).json({ error: "用戶不存在" });
         return;
+      }
+      // 稽核紀錄：記錄誰在何時新增/移除了哪些標的（上線測試要求可追蹤）
+      try {
+        const { appendAudit } = await import("./data/audit-log");
+        const prevSet = new Set(prev.map((w) => w.symbol));
+        const nextSymbols = user.watchlist.map((w) => w.symbol);
+        const nextSet = new Set(nextSymbols);
+        appendAudit({
+          at: new Date().toISOString(),
+          userId: user.id,
+          username: user.username,
+          action: "watchlist.update",
+          added: nextSymbols.filter((s) => !prevSet.has(s)),
+          removed: [...prevSet].filter((s) => !nextSet.has(s)),
+          count: nextSymbols.length,
+          ip: req.ip,
+        });
+      } catch {
+        /* 稽核失敗不影響主流程 */
       }
       res.json({ ok: true });
     }),
@@ -1211,6 +1241,36 @@ export function createApi(): express.Router {
     }),
   );
 
+  // ========== 管理端（僅限本機連線，或設定 ADMIN_TOKEN 後帶 x-admin-token） ==========
+
+  function isAdminRequest(req: import("express").Request): boolean {
+    const token = process.env.ADMIN_TOKEN;
+    const hdr = req.headers["x-admin-token"];
+    if (token) return hdr === token;
+    const ip = req.ip ?? "";
+    return ip === "127.0.0.1" || ip === "::1" || ip === "::ffff:127.0.0.1";
+  }
+
+  api.get(
+    "/admin/users",
+    wrap(async (req, res) => {
+      if (!isAdminRequest(req)) { res.status(403).json({ error: "forbidden" }); return; }
+      const { getUsers } = await import("./data/users");
+      const users = getUsers();
+      res.json({ counts: { users: users.length }, users });
+    }),
+  );
+
+  api.get(
+    "/admin/audit",
+    wrap(async (req, res) => {
+      if (!isAdminRequest(req)) { res.status(403).json({ error: "forbidden" }); return; }
+      const { readAudit } = await import("./data/audit-log");
+      const limit = Math.min(Number(req.query.limit ?? 100) || 100, 1000);
+      const entries = readAudit(limit);
+      res.json({ count: entries.length, entries });
+    }),
+  );
   api.use((_, res) => {
     res.status(404).json({ error: "not found" });
   });
