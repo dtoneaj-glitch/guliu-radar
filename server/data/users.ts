@@ -8,6 +8,7 @@
 import { randomBytes, scryptSync, timingSafeEqual, createHmac } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { watchlistStore } from "./watchlist-store";
 
 /** JWT 簽章金鑰：一律由 .env 的 JWT_SECRET 提供。 */
 const DEV_FALLBACK_SECRET = "guliu-radar-dev-secret-change-in-prod";
@@ -146,7 +147,9 @@ export function findUserByUsername(username: string): User | null {
 export function findUserById(userId: string): User | null {
   const data = readUsers();
   const user = data.users.find((u) => u.id === userId);
-  return user ? cleanUser(user) : null;
+  if (!user) return null;
+  // 自選股已遷至 SQLite（users.json 只保留帳號資料）
+  return { ...cleanUser(user), watchlist: watchlistStore.get(user.id) };
 }
 
 export function login(username: string, password: string): { user: User; token: string } | null {
@@ -164,9 +167,9 @@ export function updateWatchlist(userId: string, watchlist: WatchlistEntry[]): Us
   const data = readUsers();
   const idx = data.users.findIndex((u) => u.id === userId);
   if (idx === -1) return null;
-  data.users[idx].watchlist = watchlist;
-  writeUsers(data);
-  return cleanUser(data.users[idx]);
+  // 寫入 SQLite（每檔一列、具交易原子性），不再整檔重寫 users.json
+  watchlistStore.replace(userId, watchlist);
+  return { ...cleanUser(data.users[idx]), watchlist: watchlistStore.get(userId) };
 }
 
 export function getUsers(): Array<{ id: string; username: string; createdAt: string; watchlistCount: number }> {
@@ -174,7 +177,7 @@ export function getUsers(): Array<{ id: string; username: string; createdAt: str
     id: u.id,
     username: u.username,
     createdAt: u.createdAt,
-    watchlistCount: u.watchlist.length,
+    watchlistCount: watchlistStore.count(u.id),
   }));
 }
 

@@ -1,5 +1,6 @@
 // 必須是第一個 import：確保 .env 在其它模組讀取 process.env 之前載入
 import "./load-env";
+import { migrateWatchlistsFromJson } from "./data/watchlist-store";
 import express from "express";
 import { createServer } from "http";
 import path from "path";
@@ -14,6 +15,8 @@ import { runEntryWatchPushForAllUsers } from "./data/entry-watch-scheduler";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// 一次性遷移：把 users.json 內既有的自選股搬進 SQLite（只做一次）
+migrateWatchlistsFromJson();
 async function startServer() {
   const app = express();
   const server = createServer(app);
