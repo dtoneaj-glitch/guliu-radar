@@ -68,9 +68,9 @@ def ensure_sdk():
     print("[2/4] 檢查官方 SDK（kgisuperpy）…")
     try:
         import kgisuperpy  # noqa: F401
-        print("      [OK] 已安裝")
+        print("      [OK] 已安裝且可匯入")
         return True
-    except Exception:
+    except ModuleNotFoundError:
         print("      [X] 尚未安裝")
         ans = ask("      要現在自動安裝嗎？（需要網路，會執行 pip install）[Y/n] ", "n").strip().lower()
         if ans in ("", "y", "yes"):
@@ -82,6 +82,14 @@ def ensure_sdk():
                 print("      請改用有 pip 的一般 Python，或照 bridge/README.md 手動安裝。")
         else:
             print("      略過安裝。")
+        return False
+    except Exception as exc:
+        # 已安裝、但匯入時就炸（最常見：numba 相依的 llvmlite.dll 缺失，多為 Python 版本太新）
+        print(f"      [X] 已安裝，但匯入失敗：{type(exc).__name__}: {exc}")
+        print("")
+        print("          常見原因：llvmlite.dll 缺失（numba 的相依）。修復指令：")
+        print(f'          "{sys.executable}" -m pip install --force-reinstall --only-binary :all: --no-deps llvmlite')
+        print("          若修不好，改用 Python 3.13 跑本程式（llvmlite 對最新版 Python 可能還沒支援）。")
         return False
 
 
