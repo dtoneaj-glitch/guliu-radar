@@ -228,14 +228,19 @@ export default defineConfig({
       // 開發模式把 /api 轉給本地 API server（pnpm dev:api）
       "/api": { target: "http://localhost:3001", changeOrigin: true },
     },
+    // 允許的 Host：本機、Manus 網域，以及 Cloudflare Tunnel（測試用）。
+    // 可用環境變數 EXTRA_ALLOWED_HOSTS=你的網域,另一個 追加（逗號分隔）。
     allowedHosts: [
       ".manuspre.computer",
       ".manus.computer",
       ".manus-asia.computer",
       ".manuscomputer.ai",
       ".manusvm.computer",
+      ".trycloudflare.com", // Cloudflare Quick Tunnel（免費臨時網址）
+      ".cfargotunnel.com", // Cloudflare Named Tunnel
       "localhost",
       "127.0.0.1",
+      ...(process.env.EXTRA_ALLOWED_HOSTS ?? "").split(",").map((h) => h.trim()).filter(Boolean),
     ],
     fs: {
       strict: true,
