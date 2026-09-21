@@ -180,3 +180,39 @@ export async function fetchTwseInstitutional(dateAd: string): Promise<Map<string
   }
   return map;
 }
+
+export interface InstitutionalAmounts {
+  /** 外資及陸資（不含外資自營商）買賣差額（億元） */
+  foreignYi: number;
+  /** 投信（億元） */
+  trustYi: number;
+  /** 自營商（自行＋避險，億元） */
+  dealerYi: number;
+  /** 官方合計（億元） */
+  totalYi: number;
+}
+
+/**
+ * 官方三大法人買賣金額（億元）— 證交所 BFI82U。
+ *
+ * 為什麼要用這個：個股層級的「股數 × 收盤價」只是**估算**（且排除權證等 6 碼證券），
+ * 與官方金額常有 10~40% 落差。市場層級的金額改用官方表最準，數字也才對得上新聞。
+ * 注意：BFI82U 僅涵蓋**上市**（不含上櫃）。
+ */
+export async function fetchTwseInstitutionalAmounts(dateIso: string): Promise<InstitutionalAmounts | null> {
+  const ymd = dateIso.replace(/-/g, "");
+  const res = await fetchJson<{ stat: string; data?: string[][] }>(
+    `https://www.twse.com.tw/rwd/zh/fund/BFI82U?dayDate=${ymd}&type=day&response=json`,
+  );
+  if (res.stat !== "OK" || !Array.isArray(res.data)) return null;
+  const pick = (keyword: string): number => {
+    const row = res.data!.find((r) => String(r[0]).includes(keyword));
+    return row ? num(row[3]) : 0;
+  };
+  const foreignYi = pick("外資及陸資") / 1e8;
+  const trustYi = pick("投信") / 1e8;
+  const dealerYi = (pick("自營商(自行買賣)") + pick("自營商(避險)")) / 1e8;
+  const totalYi = pick("合計") / 1e8;
+  if (![foreignYi, trustYi, dealerYi, totalYi].every(Number.isFinite)) return null;
+  return { foreignYi: Math.round(foreignYi * 10) / 10, trustYi: Math.round(trustYi * 10) / 10, dealerYi: Math.round(dealerYi * 10) / 10, totalYi: Math.round(totalYi * 10) / 10 };
+}

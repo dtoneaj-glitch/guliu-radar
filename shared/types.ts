@@ -347,6 +347,8 @@ export interface MarketMood {
   date: string;
   summaryText: string;
   sentiment: "樂觀" | "偏多" | "中性" | "偏空" | "恐慌";
+  /** 金額來源：official=證交所官方(BFI82U,僅上市)；estimate=股數×收盤估算(含上櫃) */
+  flowSource?: "official" | "estimate";
   foreignFlow: number; // 億元
   trustFlow: number;   // 億元
   dealerFlow: number;  // 億元

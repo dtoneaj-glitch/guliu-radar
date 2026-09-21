@@ -542,7 +542,10 @@ export function createApi(): express.Router {
     "/dashboard",
     wrap(async (_req, res) => {
       const snapshot = await getSnapshot();
-      res.json(buildDashboard(snapshot));
+      // 市場層級法人金額改用證交所官方 BFI82U（取不到才回估算）
+      const { fetchTwseInstitutionalAmounts } = await import("./data/providers/twse");
+      const official = await fetchTwseInstitutionalAmounts(snapshot.asOf).catch(() => null);
+      res.json(buildDashboard(snapshot, official));
     }),
   );
 
@@ -1415,7 +1418,7 @@ function summarizeMood(sentiment: string, totalYi: number): string {
   return `${netText}，${moodText}`;
 }
 
-function buildDashboard(snapshot: Snapshot): DashboardResponse {
+function buildDashboard(snapshot: Snapshot, official?: { foreignYi: number; trustYi: number; dealerYi: number; totalYi: number } | null): DashboardResponse {
   const { summary, institutional } = snapshot;
   const denom = summary.advance + summary.decline;
   const advanceRatio = denom > 0 ? summary.advance / denom : 0.5;
@@ -1427,24 +1430,40 @@ function buildDashboard(snapshot: Snapshot): DashboardResponse {
   else if (advanceRatio >= 0.35) sentiment = "偏空";
   else sentiment = "恐慌";
 
-  let foreignTotal = 0, trustTotal = 0, dealerTotal = 0;
-  if (institutional) {
-    for (const [sym, b] of institutional) {
-      const close = snapshot.bySymbol.get(sym)?.close ?? 0;
-      foreignTotal += b.foreign * close;
-      trustTotal += b.trust * close;
-      dealerTotal += b.dealer * close;
+  // 市場層級金額：優先用證交所官方 BFI82U（精確）；取不到才回「股數×收盤」估算
+  let foreignYi: number, trustYi: number, dealerYi: number, totalYi: number;
+  let flowSource: "official" | "estimate";
+  if (official) {
+    foreignYi = official.foreignYi;
+    trustYi = official.trustYi;
+    dealerYi = official.dealerYi;
+    totalYi = official.totalYi;
+    flowSource = "official";
+  } else {
+    let foreignTotal = 0, trustTotal = 0, dealerTotal = 0;
+    if (institutional) {
+      for (const [sym, b] of institutional) {
+        const close = snapshot.bySymbol.get(sym)?.close ?? 0;
+        foreignTotal += b.foreign * close;
+        trustTotal += b.trust * close;
+        dealerTotal += b.dealer * close;
+      }
     }
+    foreignYi = foreignTotal / 1e8;
+    trustYi = trustTotal / 1e8;
+    dealerYi = dealerTotal / 1e8;
+    totalYi = (foreignTotal + trustTotal + dealerTotal) / 1e8;
+    flowSource = "estimate";
   }
-  const totalYi = (foreignTotal + trustTotal + dealerTotal) / 1e8;
 
   const mood: MarketMood = {
     date: snapshot.asOf,
     summaryText: summarizeMood(sentiment, totalYi),
     sentiment,
-    foreignFlow: Math.round(foreignTotal / 1e8),
-    trustFlow: Math.round(trustTotal / 1e8),
-    dealerFlow: Math.round(dealerTotal / 1e8),
+    flowSource,
+    foreignFlow: Math.round(foreignYi),
+    trustFlow: Math.round(trustYi),
+    dealerFlow: Math.round(dealerYi),
     retailMood: advanceRatio > 0.6 ? "偏多" : advanceRatio < 0.4 ? "偏空" : "觀望",
   };
 

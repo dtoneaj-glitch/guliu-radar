@@ -23,7 +23,17 @@ export async function getChipDivergence(snapshot: Snapshot): Promise<ChipDiverge
       }
     }
   }
-  const foreignSpotNetYi = hasSpotData ? foreignSpotRaw / 1e8 : null;
+  let foreignSpotNetYi = hasSpotData ? foreignSpotRaw / 1e8 : null;
+
+  // 2026-09-21：市場層級一律採用證交所官方 BFI82U 金額，與摘要同一組數字
+  // （估算值排除權證等 6 碼證券，會與官方差 10~40%，兩處不一致會讓人困惑）
+  try {
+    const { fetchTwseInstitutionalAmounts } = await import("./providers/twse");
+    const official = await fetchTwseInstitutionalAmounts(snapshot.asOf);
+    if (official) foreignSpotNetYi = official.foreignYi;
+  } catch {
+    /* 取不到官方金額時，沿用估算值 */
+  }
 
   // 外資期貨未平倉淨口數：ChipCardData 已經算好，直接取「外資及陸資」那筆
   let foreignFuturesNetOI: number | null = null;
