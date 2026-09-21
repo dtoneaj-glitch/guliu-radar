@@ -481,7 +481,7 @@ function ZoneDetail({ zone, onBack, goPA }: { zone: HotZone; onBack: () => void;
         <section className="detail-panel"><span className="eyebrow">TOP CONTRIBUTORS</span><h2>法人買超前段個股</h2>
           {zone.topStocks.length === 0 ? <div className="empty-state"><h3>沒有個股明細</h3><p>此區需 API 連線才會顯示。</p></div> : zone.topStocks.map((s) => (
             <button className="mini-stock" key={s.symbol} onClick={() => goPA(s.symbol)}>
-              <span>{s.symbol} {s.name} <small className={s.changePct != null && s.changePct < 0 ? "down" : "up"}>{fmtPrice(s.close)}</small> · {fmtSignedPrice(s.changeAmt)} · {fmtPct(s.changePct)}</span>
+              <span>{s.symbol} {s.name} <small className={s.changePct != null && s.changePct < 0 ? "down" : "up"}>{fmtPrice(s.close)}</small> · {fmtSignedPrice(s.changeAmt)} · {fmtPct(s.changePct)}{s.exDividend ? <span style={{ marginLeft: 6, fontSize: 10, padding: "0 4px", borderRadius: 3, background: "rgba(160,106,0,.18)", color: "#a06a00" }}>除權息</span> : null}</span>
               <b>{s.netBuyValue != null ? fmtYi(s.netBuyValue / 1e8) : "—"}</b>
               <ArrowUpRight size={15} />
             </button>
@@ -557,7 +557,7 @@ function Scan({ zones, goPA }: { zones: HotZone[]; goPA: (symbol: string, highli
                     <button className="candidate-row strat-row" key={r.symbol} onClick={() => goPA(r.symbol, strategyName)}>
                       <span className={`strat-pill strat-${r.status}`}>{STRAT_STATUS[r.status].label}</span>
                       <span className="candidate-main"><b>{r.symbol} <strong>{r.name}</strong></b><small>{r.status === "triggered" ? r.met.join("・") : r.missing.join("・") || r.note}</small></span>
-                      <span className="candidate-change"><b className={(r.changePct ?? 0) >= 0 ? "up" : "down"}>{fmtPrice(r.close)}</b><small>{fmtSignedPrice(r.changeAmt)} · {fmtPct(r.changePct)}</small></span>
+                      <span className="candidate-change"><b className={(r.changePct ?? 0) >= 0 ? "up" : "down"}>{fmtPrice(r.close)}</b><small>{fmtSignedPrice(r.changeAmt)} · {fmtPct(r.changePct)}{r.exDividend ? <span style={{ marginLeft: 6, fontSize: 10, padding: "0 4px", borderRadius: 3, background: "rgba(160,106,0,.18)", color: "#a06a00" }}>除權息</span> : null}</small></span>
                       <ChevronRight size={16} />
                     </button>
                   ))}
@@ -570,7 +570,7 @@ function Scan({ zones, goPA }: { zones: HotZone[]; goPA: (symbol: string, highli
                   <span className="candidate-rank">{String(index + 1).padStart(2, "0")}</span>
                   <span className="candidate-main"><b>{s.symbol} <strong>{s.name}</strong></b><small>{s.industry ?? ""}</small></span>
                   <span className="candidate-flow"><b className={(s.netBuyValue ?? 0) >= 0 ? "up" : "down"}>{s.netBuyValue != null ? fmtYi(s.netBuyValue / 1e8) : "—"}</b><small>法人今日</small></span>
-                  <span className="candidate-change"><b className={(s.changePct ?? 0) >= 0 ? "up" : "down"}>{fmtPrice(s.close)}</b><small>{fmtSignedPrice(s.changeAmt)} · {fmtPct(s.changePct)}</small></span>
+                  <span className="candidate-change"><b className={(s.changePct ?? 0) >= 0 ? "up" : "down"}>{fmtPrice(s.close)}</b><small>{fmtSignedPrice(s.changeAmt)} · {fmtPct(s.changePct)}{s.exDividend ? <span style={{ marginLeft: 6, fontSize: 10, padding: "0 4px", borderRadius: 3, background: "rgba(160,106,0,.18)", color: "#a06a00" }}>除權息</span> : null}</small></span>
                   <ChevronRight size={16} />
                 </button>
               ))}{rows.length === 0 && <div className="empty-state"><h3>沒有符合的候選股</h3><p>試著換一個模式或熱區，或等明天盤後更新。</p></div>}</div>

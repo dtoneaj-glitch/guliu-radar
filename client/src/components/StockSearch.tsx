@@ -73,7 +73,7 @@ export default function StockSearch({ mode = "inline", onPick, autoFocus = false
                     <span className="ss-name"><b>{s.name}</b><small>{s.industry ?? ""}</small></span>
                     <span className="ss-quote">
                       <b className={(s.changePct ?? 0) >= 0 ? "up" : "down"}>{fmtPrice(s.close)}</b>
-                      <small>{fmtSignedPrice(s.changeAmt)} · {fmtPct(s.changePct)}</small>
+                      <small>{fmtSignedPrice(s.changeAmt)} · {fmtPct(s.changePct)}{s.exDividend ? <span style={{ marginLeft: 6, fontSize: 10, padding: "0 4px", borderRadius: 3, background: "rgba(160,106,0,.18)", color: "#a06a00" }}>除權息</span> : null}</small>
                     </span>
                   </button>
                   <button

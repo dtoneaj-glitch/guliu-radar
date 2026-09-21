@@ -190,6 +190,7 @@ export default function StockDetail({ symbol, onBack, highlightStrategy }: Stock
           </span>
           <span style={{ fontSize: 14, fontFamily: "'DM Mono', monospace", fontWeight: 500, color: (signal.changePct ?? 0) >= 0 ? "var(--primary)" : "var(--destructive)" }}>
             {(signal.changePct ?? 0) >= 0 ? "▲" : "▼"} {fmtSignedPrice(signal.changeAmt)} · {fmtPct(signal.changePct)}
+            {signal.exDividend ? <span style={{ marginLeft: 6, fontSize: 10, padding: "0 4px", borderRadius: 3, background: "rgba(160,106,0,.18)", color: "#a06a00" }}>除權息</span> : null}
           </span>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>

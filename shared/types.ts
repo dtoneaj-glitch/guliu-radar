@@ -20,6 +20,8 @@ export interface Quote {
   low: number;
   /** 漲跌幅 %，除權等異常為 null */
   changePct: number | null;
+  /** 當日除權息（官方漲跌欄為 X）→ 漲跌與漲跌幅不可比 */
+  exDividend?: boolean;
   /** 成交股數 */
   volumeShares: number;
   /** 成交值（元） */
@@ -38,6 +40,7 @@ export interface StockBrief {
   close: number;
   changePct: number | null;
   changeAmt: number | null;
+  exDividend?: boolean;
   netBuyValue: number | null;
 }
 
@@ -204,6 +207,8 @@ export interface StrategyEval {
   close: number | null;
   changeAmt: number | null;
   changePct: number | null;
+  /** 當日除權息（官方漲跌欄為 X）→ 漲跌不可比 */
+  exDividend?: boolean;
 }
 
 export interface StrategyScanResponse {
@@ -404,6 +409,7 @@ export interface StockSignalBrief {
   close: number;
   changePct: number | null;
   changeAmt: number | null;
+  exDividend?: boolean;
   status: "觀察中" | "可留意" | "不建議" | "條件符合";
   statusReason: string;
   ma20: number | null;
@@ -436,6 +442,8 @@ export interface StockSignal {
   close: number;
   changePct: number | null;
   changeAmt: number | null;
+  /** 當日除權息（官方漲跌欄為 X）→ 漲跌不可比 */
+  exDividend?: boolean;
   status: "觀察中" | "可留意" | "不建議" | "條件符合";
   statusReason: string;
   pricePosition: {

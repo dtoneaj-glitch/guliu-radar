@@ -1,3 +1,4 @@
+import { deriveChange } from "../../shared/quote-change";
 import type {
   HotZone,
   HotzonesResponse,
@@ -55,17 +56,19 @@ export async function getSnapshot(): Promise<Snapshot> {
     const info = industry.get(row.symbol);
     const breakdown = inst?.get(row.symbol);
     const netShares = breakdown?.total ?? null;
+    const chg = deriveChange(row.close, row.change);
     quotes.push({
       symbol: row.symbol,
       name: row.name || info?.name || row.symbol,
       market: "twse",
       industry: info?.industry || null,
-      prevClose: row.close - row.change,
+      prevClose: chg.prevClose,
       close: row.close,
       open: row.open,
       high: row.high,
       low: row.low,
-      changePct: row.change !== 0 && Number.isFinite(row.change) ? (row.change / (row.close - row.change)) * 100 : 0,
+      changePct: chg.changePct,
+      exDividend: chg.exDividend,
       volumeShares: row.volumeShares,
       value: row.value,
       netBuyShares: netShares,
@@ -77,12 +80,13 @@ export async function getSnapshot(): Promise<Snapshot> {
       const info = industry.get(row.symbol);
       const breakdown = tpexInst?.get(row.symbol);
       const netShares = breakdown?.total ?? null;
+      const chg = deriveChange(row.close, row.change ?? null);
       quotes.push({
         symbol: row.symbol,
         name: row.name || info?.name || row.symbol,
         market: "tpex",
         industry: info?.industry || null,
-        prevClose: row.change != null ? row.close - row.change : row.close,
+        prevClose: chg.prevClose,
         close: row.close,
         open: row.open,
         high: row.high,
@@ -258,7 +262,8 @@ function briefOf(q: Quote): StockBrief {
     industry: q.industry,
     close: q.close,
     changePct: q.changePct,
-    changeAmt: q.close - q.prevClose,
+    changeAmt: q.exDividend ? null : q.close - q.prevClose,
+    exDividend: q.exDividend,
     netBuyValue: q.netBuyValue,
   };
 }
