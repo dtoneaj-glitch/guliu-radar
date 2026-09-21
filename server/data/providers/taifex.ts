@@ -454,13 +454,18 @@ export async function fetchRetailFuturesPosition(
 
     // 全市場未平倉：只取該契約、一般交易場次、OpenInterest 為有效數字的列（排除盤後與價差組合列）
     let marketOI = 0;
+    let dataDate: string | null = null; // 回應內的真實資料日期（見下方說明）
     for (const row of dailyRows) {
       const code = row["Contract"] ?? row["ContractCode"] ?? "";
       if (code !== contractCode) continue;
       const session = row["TradingSession"] ?? "";
       if (session && session !== "一般") continue;
       const oi = Number(row["OpenInterest"]);
-      if (Number.isFinite(oi)) marketOI += oi;
+      if (Number.isFinite(oi)) {
+        marketOI += oi;
+        const d = row["Date"];
+        if (!dataDate && d && /^\d{8}$/.test(d)) dataDate = d;
+      }
     }
 
     // 三大法人合計未平倉（外資及陸資＋投信＋自營商），以中文契約名比對
@@ -481,8 +486,13 @@ export async function fetchRetailFuturesPosition(
     const retailLong = Math.max(0, marketOI - institutionalLong);
     const retailShort = Math.max(0, marketOI - institutionalShort);
 
+    // asOf 優先用「回應內的 Date 欄位」：2026-09-21 查證發現這支端點會忽略傳入的
+    // date 參數、永遠回最新交易日，若用 targetDate（今天）當 asOf，盤中查詢會把前一交易日
+    // 的資料標成今天，害存檔比對錯位。用回應的 Date 才是最可靠的資料日期。
+    const asOf = dataDate ? `${dataDate.slice(0, 4)}-${dataDate.slice(4, 6)}-${dataDate.slice(6, 8)}` : targetDate;
+
     return {
-      asOf: targetDate,
+      asOf,
       contractCode,
       marketOI,
       institutionalLong,

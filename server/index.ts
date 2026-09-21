@@ -5,6 +5,8 @@ import { fileURLToPath } from "url";
 import { createApi } from "./api";
 import { getSnapshot } from "./data/hotzones";
 import { saveSnapshot, listArchiveDates } from "./data/archive";
+import { fetchRetailFuturesPosition } from "./data/providers/taifex";
+import { saveRetailSnapshot } from "./data/retail-archive";
 import { runEntryWatchPushForAllUsers } from "./data/entry-watch-scheduler";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -44,6 +46,15 @@ async function startServer() {
       const snapshot = await getSnapshot();
       saveSnapshot(snapshot.asOf, snapshot, snapshot.institutional);
       console.log(`[archive] ✅ 已存檔 ${snapshot.asOf}`);
+      // 散戶留倉快照（失敗不影響 B0 存檔）
+      for (const contract of ["MTX", "TMF"] as const) {
+        try {
+          const retail = await fetchRetailFuturesPosition(contract);
+          if (retail) saveRetailSnapshot(retail);
+        } catch {
+          /* ignore */
+        }
+      }
     } catch (err) {
       console.error(`[archive] ❌ 存檔失敗:`, err);
     }

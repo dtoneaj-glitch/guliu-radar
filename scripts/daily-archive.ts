@@ -17,6 +17,8 @@ import { getSnapshot } from "../server/data/hotzones";
 import { saveSnapshot, listArchiveDates } from "../server/data/archive";
 import { fetchChipCard } from "../server/data/providers/taifex";
 import { saveChipCardSnapshot } from "../server/data/chipcard-archive";
+import { fetchRetailFuturesPosition } from "../server/data/providers/taifex";
+import { saveRetailSnapshot } from "../server/data/retail-archive";
 
 async function main(): Promise<void> {
   console.log(`[daily-archive] ${new Date().toISOString()} 開始`);
@@ -38,6 +40,18 @@ async function main(): Promise<void> {
     console.log(`[daily-archive] 大盤籌碼已存 ${chip.asOf}`);
   } catch (err) {
     console.warn(`[daily-archive] 大盤籌碼存檔失敗（不影響 B0）：${(err as Error).message}`);
+  }
+  // 3) 散戶留倉快照：小台/微台淨多空比（供日後計算單日變動）
+  for (const contract of ["MTX", "TMF"] as const) {
+    try {
+      const retail = await fetchRetailFuturesPosition(contract);
+      if (retail) {
+        saveRetailSnapshot(retail);
+        console.log(`[daily-archive] 散戶留倉已存 ${retail.asOf} ${contract}（淨多空比 ${retail.retailNetRatioPct}%）`);
+      }
+    } catch (err) {
+      console.warn(`[daily-archive] 散戶留倉存檔失敗 ${contract}：${(err as Error).message}`);
+    }
   }
 
   console.log(`[daily-archive] 完成`);

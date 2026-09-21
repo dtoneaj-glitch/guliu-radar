@@ -94,25 +94,28 @@ export async function fetchTpexInstitutional(dateAd: string): Promise<Map<string
 
   const fields = table.fields;
   const codeIdx = fields.findIndex((f) => f.replace(/\s/g, "").includes("代號"));
-  const findIdx = (keywords: string[]): number => {
-    for (const kw of keywords) {
-      const exact = fields.indexOf(kw);
-      if (exact >= 0) return exact;
-    }
-    for (const kw of keywords) {
-      const idx = fields.findIndex((f) => f.includes(kw));
-      if (idx >= 0) return idx;
-    }
-    return -1;
-  };
-  // 排除「外資自營商買賣超」（已計入自營商買賣金額，避免重複計算），採跟 TWSE T86 相同的口徑
-  const foreignIdx = findIdx(["外陸資買賣超股數", "外陸資買賣超"]);
-  const trustIdx = findIdx(["投信買賣超股數", "投信買賣超"]);
-  const dealerIdx = findIdx(["自營商買賣超股數(合計)", "自營商買賣超股數", "自營商買賣超合計", "自營商買賣超"]);
-  const netIdx = findIdx(["三大法人買賣超股數", "三大法人買賣超"]);
-
   if (codeIdx < 0) throw new Error("TPEx 三大法人欄位結構改變：找不到代號");
 
+  // 2026-09-21 對照真實 API 修正：這支端點的欄位是一堆重複的通用標籤
+  // （買進股數/賣出股數/買賣超股數 × 7 組），沒有「外陸資買賣超股數」這種名稱，
+  // 所以只能用「位置」對應。已用 6488 驗證：idx4 + idx13 + idx22 = idx23。
+  //   0 代號 / 1 名稱 /
+  //   2-4   外資及陸資(不含外資自營商) 買進/賣出/買賣超
+  //   5-7   外資自營商
+  //   8-10  外資及陸資合計
+  //   11-13 投信
+  //   14-16 自營商(自行買賣)
+  //   17-19 自營商(避險)
+  //   20-22 自營商合計
+  //   23    三大法人買賣超股數合計
+  const totalIdx = fields.findIndex((f) => f.includes("三大法人買賣超股數合計"));
+  if (totalIdx < 0 || fields.length < 24) {
+    throw new Error("TPEx 三大法人欄位結構改變：找不到合計欄或欄位數不足");
+  }
+  const foreignIdx = 4; // 外資及陸資(不含外資自營商) 買賣超
+  const trustIdx = 13; // 投信 買賣超
+  const dealerIdx = 22; // 自營商合計 買賣超
+  const netIdx = totalIdx; // 三大法人買賣超股數合計
   const map = new Map<string, InstitutionalBreakdown>();
   for (const row of table.data) {
     const code = (row[codeIdx] ?? "").trim();

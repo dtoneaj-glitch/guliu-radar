@@ -122,3 +122,8 @@ feedback-inbox/
 
 # Daily archive logs
 logs/
+
+# 執行期使用者資料（含個資/憑證，不進版控）
+server/data/users.json
+server/data/notifications.json
+server/data/user-strategies.json

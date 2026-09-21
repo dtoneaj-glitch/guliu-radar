@@ -1,6 +1,7 @@
 import { evaluateChipDivergence, type ChipDivergenceResult } from "../../shared/chip-divergence";
 import type { Snapshot } from "./hotzones";
 import { fetchChipCard, fetchRetailFuturesPosition } from "./providers/taifex";
+import { saveRetailSnapshot, latestRetailBefore } from "./retail-archive";
 
 /**
  * 組裝真實資料、呼叫純邏輯的 evaluateChipDivergence()。
@@ -39,10 +40,20 @@ export async function getChipDivergence(snapshot: Snapshot): Promise<ChipDiverge
   // 之後要補「當日變動」，需把這份快照也存進 SQLite archive，用前一天存檔比對。
   let retailNetRatioPct: number | null = null;
   let retailNetRatioPctTmf: number | null = null;
+  let retailNetRatioChangePct: number | null = null;
   try {
     const [mtx, tmf] = await Promise.all([fetchRetailFuturesPosition("MTX"), fetchRetailFuturesPosition("TMF")]);
     retailNetRatioPct = mtx?.retailNetRatioPct ?? null;
     retailNetRatioPctTmf = tmf?.retailNetRatioPct ?? null;
+    // 單日變動：與最近一筆『較早日期』的存檔比對（TAIFEX 無歷史查詢，靠自己存檔累積）
+    if (mtx?.retailNetRatioPct != null) {
+      const prev = latestRetailBefore(mtx.asOf, "MTX");
+      if (prev?.netRatioPct != null) {
+        retailNetRatioChangePct = Math.round((mtx.retailNetRatioPct - prev.netRatioPct) * 10) / 10;
+      }
+      saveRetailSnapshot(mtx);
+    }
+    if (tmf) saveRetailSnapshot(tmf);
   } catch {
     retailNetRatioPct = null;
     retailNetRatioPctTmf = null;
@@ -53,6 +64,6 @@ export async function getChipDivergence(snapshot: Snapshot): Promise<ChipDiverge
     foreignFuturesNetOI,
     retailNetRatioPct,
     retailNetRatioPctTmf,
-    retailNetRatioChangePct: null,
+    retailNetRatioChangePct,
   });
 }

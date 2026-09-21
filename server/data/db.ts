@@ -89,3 +89,20 @@ for (const col of ["foreign_futures_net_trade", "trust_futures_net_trade", "deal
     /* 欄位已存在，忽略 */
   }
 }
+
+// 散戶留倉（小台/微台）每日快照。TAIFEX 相關端點只回最新交易日、無歷史查詢，
+// 故每日存一筆自己的資料，用於計算「散戶淨多空比的單日變動」。
+db.exec(`
+  CREATE TABLE IF NOT EXISTS archive_retail (
+    date TEXT NOT NULL,
+    contract TEXT NOT NULL,
+    net_ratio_pct REAL,
+    market_oi INTEGER,
+    institutional_long INTEGER,
+    institutional_short INTEGER,
+    retail_long INTEGER,
+    retail_short INTEGER,
+    data TEXT NOT NULL,
+    PRIMARY KEY (date, contract)
+  );
+`);
