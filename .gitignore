@@ -130,3 +130,7 @@ server/data/user-strategies.json
 
 # 稽核紀錄（執行期資料）
 server/data/audit-log.jsonl
+
+# 凱基橋接產物
+bridge/__pycache__/
+bridge/logs/

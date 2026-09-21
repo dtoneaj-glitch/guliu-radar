@@ -22,6 +22,7 @@ import { scanEntryZoneProximity } from "./data/entry-watch";
 import { buildPaDefaultAnalysis } from "./data/pa-analysis";
 import { fetchChipCard, fetchOptionsOISnapshot } from "./data/providers/taifex";
 import { fetchTaiwanVix } from "./data/providers/taifex-vix";
+import { getLiveQuotes, isLiveEnabled, isBridgeHealthy, getLiveLastError } from "./data/providers/kgi-live";
 import type { OptionsOIData } from "../shared/types";
 import { fetchPantlasStock, fetchPantlasOverview } from "./data/providers/pantlas";
 import { getUserStrategies, getUserStrategy, createUserStrategy, updateUserStrategy, deleteUserStrategy } from "./data/user-strategies";
@@ -447,6 +448,29 @@ export function createApi(): express.Router {
     }),
   );
 
+  // ========== 即時行情（凱基 SUPER PY 橋接；未啟用時回 enabled:false） ==========
+
+  api.get(
+    "/live/quotes",
+    wrap(async (req, res) => {
+      const symbols = String(req.query.symbols ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+      if (!isLiveEnabled()) {
+        res.json({ data: [], enabled: false, error: null });
+        return;
+      }
+      const map = await getLiveQuotes(symbols);
+      res.json({ data: [...map.values()], enabled: true, error: null });
+    }),
+  );
+
+  api.get(
+    "/live/status",
+    wrap(async (_req, res) => {
+      const enabled = isLiveEnabled();
+      const healthy = enabled ? await isBridgeHealthy() : false;
+      res.json({ enabled, healthy, lastError: getLiveLastError(), bridgeUrl: process.env.KGI_BRIDGE_URL ?? `http://127.0.0.1:${process.env.KGI_BRIDGE_PORT ?? "3010"}` });
+    }),
+  );
   api.get(
     "/vix",
     wrap(async (_req, res) => {
