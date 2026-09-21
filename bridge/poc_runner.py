@@ -72,7 +72,7 @@ def ensure_sdk():
         return True
     except Exception:
         print("      [X] 尚未安裝")
-        ans = input("      要現在自動安裝嗎？（需要網路，會執行 pip install）[Y/n] ").strip().lower()
+        ans = ask("      要現在自動安裝嗎？（需要網路，會執行 pip install）[Y/n] ", "n").strip().lower()
         if ans in ("", "y", "yes"):
             try:
                 subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "kgisuperpy"])
@@ -86,7 +86,11 @@ def ensure_sdk():
 
 
 def ask(prompt, default=""):
-    got = input(prompt).strip()
+    try:
+        got = input(prompt).strip()
+    except EOFError:
+        print("")
+        return default
     return got or default
 
 

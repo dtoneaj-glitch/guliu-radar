@@ -1,9 +1,7 @@
 @echo off
 setlocal
-rem ============================================================
 rem  Guliu Radar - KGI SUPER PY live bridge runner
 rem  Starts bridge/kgi_bridge.py (reads .env from project root)
-rem ============================================================
 cd /d "%~dp0.."
 if not exist "bridge\logs" mkdir "bridge\logs"
 set LOG=bridge\logs\bridge.log
