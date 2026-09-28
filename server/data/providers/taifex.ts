@@ -270,16 +270,27 @@ export async function fetchChipCard(date: string | null = null): Promise<ChipCar
 }
 
 /** 從今日往前倒推，找到最近有資料的交易日（最多找 5 天）。 */
+/**
+ * 取得 TAIFEX 最新有資料的交易日。
+ *
+ * 2026-09-28 修正：這支端點**會忽略 date 參數、永遠回最新交易日**（實測查 09-28 回傳的
+ * 資料 Date=20260924）。原本直接相信「查詢日」會把休市日標成有資料，害籌碼快照被標成休市日。
+ * 現在一律以**回應內的 Date 欄位**為準。
+ */
 async function findLatestTradingDate(): Promise<string> {
   for (let i = 0; i < 5; i++) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const ymd = d.toISOString().slice(0, 10);
     try {
-      const data = await fetchJson<{ Date: string }[]>(
+      const data = await fetchJson<{ Date?: string }[]>(
         `https://openapi.taifex.com.tw/v1/MarketDataOfMajorInstitutionalTradersGeneralBytheDate?date=${ymd}`,
       );
-      if (data.length > 0) return ymd;
+      if (data.length > 0) {
+        const raw = String(data[0]?.Date ?? "").replace(/\D/g, "");
+        if (/^\d{8}$/.test(raw)) return `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+        return ymd;
+      }
     } catch {
       /* 繼續往前找 */
     }
