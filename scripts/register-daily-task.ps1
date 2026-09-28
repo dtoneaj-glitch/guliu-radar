@@ -2,6 +2,7 @@
 #  股流 Radar - 註冊每日存檔排程（含可靠性設定）
 #  週一–五 21:00 執行 scripts\run-daily-archive.bat
 #
+#  執行身分：S4U（服務使用者）— 登出／未登入也能執行，不需儲存密碼
 #  可靠性設定：
 #   - StartWhenAvailable : 21:00 電腦沒開／沒登入 → 之後開機時補跑（錯過不漏）
 #   - WakeToRun          : 睡眠中會被喚醒執行
@@ -64,7 +65,7 @@ $xml = @"
   <Principals>
     <Principal id="Author">
       <UserId>$env:USERDOMAIN\$env:USERNAME</UserId>
-      <LogonType>InteractiveToken</LogonType>
+      <LogonType>S4U</LogonType>
       <RunLevel>LeastPrivilege</RunLevel>
     </Principal>
   </Principals>
