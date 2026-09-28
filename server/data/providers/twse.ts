@@ -59,7 +59,7 @@ function signOfChange(raw: string): number {
  * 2026-09-21 修正：原本只用 openapi 的 STOCK_DAY_ALL，該端點**當天不會更新**
  * （09-21 晚上仍回 09-18），導致整個 App 慢一天。改走 rwd MI_INDEX，當日即可取得。
  */
-async function fetchTwseDailyByDate(iso: string): Promise<TwseDailyResult | null> {
+export async function fetchTwseDailyByDate(iso: string): Promise<TwseDailyResult | null> {
   const ymd = iso.replace(/-/g, "");
   const res = await fetchJson<{ stat: string; date?: string; tables?: { title?: string; fields: string[]; data: string[][] }[] }>(
     `${RWD_MI_INDEX}?date=${ymd}&type=ALL&response=json`,
